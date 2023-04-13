@@ -6,6 +6,9 @@ import cv2
 import os
 
 
+@dl.Package.decorators.module(description='Model Adapter for Yolov8 object detection',
+                              name='model-adapter',
+                              init_inputs={'model_entity': dl.Model})
 class Adapter(dl.BaseModelAdapter):
     def save(self, local_path, **kwargs):
         self.model_entity.artifacts.upload(os.path.join(local_path, '*'))
@@ -42,7 +45,7 @@ class Adapter(dl.BaseModelAdapter):
         if os.path.isfile(model_filepath):
             model = YOLO(model_filepath)  # pass any model type
         else:
-            model = YOLO(model_filename)  # pass any model type
+            model = YOLO('yolov8n.pt')  # pass any model type
         self.model = model
 
     def train(self, data_path, output_path, **kwargs):
@@ -161,11 +164,11 @@ def package_creation(project: dl.Project):
 
     package = project.packages.push(package_name='yolov8',
                                     src_path=os.getcwd(),
-                                    description='Global Dataloop Yolo V8 implementation in pytorch',
+                                    # description='Global Dataloop Yolo V8 implementation in pytorch',
                                     # is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='mgmt3'),
+                                                            git_tag='v0.1.0'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
@@ -197,20 +200,21 @@ def model_creation(package: dl.Package):
                                       'device': 'cuda:0',
                                       'id_to_label_map': {ind: label for ind, label in enumerate(labels)}},
                                   project_id=package.project.id,
-                                  labels=labels
+                                  labels=list(labels.values())
                                   )
     return model
 
 
 def deploy():
     dl.setenv('prod')
-    project_name = 'DataloopModels'
-    project_name = 'ipm-distillator-test'
-    project = dl.projects.get(project_name)
+    # project_name = 'DataloopModels'
+    # project_name = 'ipm-distillator-test'
+    # project = dl.projects.get(project_name)
+    project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
-    model = model_creation(package=package)
-    model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
-    print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
+    # model = model_creation(package=package)
+    # model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
+    # print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
 
 
 if __name__ == "__main__":

@@ -30,15 +30,12 @@ def test_clone():
                            project_id=to_project.id)
 
 
-def test_local_train():
+def test_local_train(model_entity):
     from model_adapter import Adapter
     adapter = Adapter(model_entity=model_entity)
 
-    package.models.list().print()
-    m = dl.models.get(model_id='640ee84307a569363353ed6a')
-
-    adapter.prepare_data(dataset=dl.datasets.get(dataset_id='64089e249ab310729aa04aa0'),
-                         root_path='64089e249ab310729aa04aa0')
+    # adapter.prepare_data(dataset=dl.datasets.get(dataset_id='64089e249ab310729aa04aa0'),
+    #                      root_path='64089e249ab310729aa04aa0')
     adapter.train_model(model=model_entity)
     # m.labels = list(m.dataset.labels_flat_dict.keys())
     # m.update()
@@ -58,25 +55,10 @@ def test_local_train():
     #     'validation': json.dumps(dl.Filters(field='dir', values='/test').prepare()),
     # }
     # m.dataset.update(True)
-    adapter.train_model(m)
 
 
-def test_remote_train():
-    to_dataset = dl.datasets.get(None, '62e000ad95c4f602ae9691c8')
-    to_project = dl.projects.get(None, 'a179220f-bd40-4a75-97e3-fbe05c9f276f')
-
-    m = model_entity.clone(model_name='new sheeps exp',
-                           description='exp 3',
-                           labels=list(to_dataset.labels_flat_dict.keys()),
-                           dataset_id=to_dataset.id,
-                           project_id=to_project.id)
-
-    to_project.models.list().print()
-    to_project.packages.list().print()
-    m = to_project.models.get(model_name='new sheeps exp2')
-
-    sec, res = dl.client_api.gen_request("post",
-                                         f"/ml/models/{m.id}/train")
+def test_remote_train(model_entity: dl.Model):
+    model_entity.train()
 
 
 def test_upload_metric():
@@ -133,7 +115,7 @@ def test_upload_metric():
 
 if __name__ == "__main__":
     dl.setenv('prod')
-    model_entity = dl.models.get(None, '640ee84307a569363353ed6a')
+    model_entity = dl.models.get(None, '6437ab9363442470f2ae1a07')
     package = model_entity.package
     # model_entity.bucket.upload(r"C:\Users\Shabtay\Downloads\New folder")
-    trn()
+    test_local_train(model_entity=model_entity)
