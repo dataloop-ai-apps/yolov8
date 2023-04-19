@@ -12,7 +12,7 @@ import os
 class Adapter(dl.BaseModelAdapter):
     def save(self, local_path, **kwargs):
         self.model_entity.artifacts.upload(os.path.join(local_path, '*'))
-        self.configuration.update({'model_filename': os.path.join('weights', 'best.pt')})
+        self.configuration.update({'model_filename': 'weights/best.pt'})
 
     def convert_from_dtlpy(self, data_path, **kwargs):
         train_path = os.path.join(data_path, 'train', 'json')
@@ -112,6 +112,7 @@ class Adapter(dl.BaseModelAdapter):
         model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
         model.add_callback(event='on_val_end', func=on_train_epoch_end)
         model.train(data=data_yaml_filename,
+                    exist_ok=True,  # this will override the output dir and will not create a new one
                     epochs=epochs,
                     batch=batch,
                     device=device,
@@ -208,9 +209,9 @@ def model_creation(package: dl.Package):
 def deploy():
     dl.setenv('prod')
     # project_name = 'DataloopModels'
-    # project_name = 'ipm-distillator-test'
-    # project = dl.projects.get(project_name)
-    project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
+    project_name = 'ipm-distillator-test'
+    project = dl.projects.get(project_name)
+    # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
     # model = model_creation(package=package)
     # model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')

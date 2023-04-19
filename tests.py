@@ -115,7 +115,7 @@ def test_upload_metric():
 
 if __name__ == "__main__":
     dl.setenv('prod')
-    model_entity = dl.models.get(None, '6437ab9363442470f2ae1a07')
+    model_entity = dl.models.get(None, '643d0aa66816dd593744093e')
     package = model_entity.package
     # model_entity.bucket.upload(r"C:\Users\Shabtay\Downloads\New folder")
     test_local_train(model_entity=model_entity)
