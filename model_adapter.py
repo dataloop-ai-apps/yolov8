@@ -103,11 +103,11 @@ class Adapter(dl.BaseModelAdapter):
                 faas_callback(self.current_epoch, epochs)
             samples = list()
             for figure, value in metrics.items():
-                samples.append(dl.LogSample(figure=figure,
-                                            legend='train' if is_train is True else 'validation',
-                                            x=self.current_epoch,
-                                            y=value))
-            self.model_entity.add_log_samples(samples=samples, dataset_id=self.model_entity.dataset_id)
+                samples.append(dl.PlotSample(figure=figure,
+                                             legend='train' if is_train is True else 'validation',
+                                             x=self.current_epoch,
+                                             y=value))
+            self.model_entity.metrics.create(samples=samples, dataset_id=self.model_entity.dataset_id)
 
         model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
         model.add_callback(event='on_val_end', func=on_train_epoch_end)
@@ -166,10 +166,10 @@ def package_creation(project: dl.Project):
     package = project.packages.push(package_name='yolov8',
                                     src_path=os.getcwd(),
                                     # description='Global Dataloop Yolo V8 implementation in pytorch',
-                                    # is_global=True,
+                                    is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.2'),
+                                                            git_tag='v0.1.3'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
@@ -193,8 +193,8 @@ def model_creation(package: dl.Package):
                                   tags=['yolov8', 'pretrained', 'ms-coco'],
                                   dataset_id=None,
                                   status='trained',
-                                  # scope='public',
-                                  scope='project',
+                                  scope='public',
+                                  # scope='project',
                                   configuration={
                                       'weights_filename': 'yolov8n.pt',
                                       'imgz': 640,
@@ -207,19 +207,20 @@ def model_creation(package: dl.Package):
 
 
 def deploy():
-    dl.setenv('prod')
-    # project_name = 'DataloopModels'
-    project_name = 'ipm-distillator-test'
+    dl.setenv('rc')
+    project_name = 'DataloopModels'
+    # project_name = 'ipm-distillator-test'
     project = dl.projects.get(project_name)
     # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
-    # model = model_creation(package=package)
+    print(f'new mode pushed. codebase: {package.codebase}')
+    model = model_creation(package=package)
     # model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
     # print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
 
 
 if __name__ == "__main__":
-    deploy()
+    # deploy()
     ...
     # test_predict()
 
