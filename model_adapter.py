@@ -3,7 +3,11 @@ from ultralytics.yolo.utils import yaml_save
 import dtlpy as dl
 from PIL import Image
 import cv2
+import numpy as np
+import logging
 import os
+
+logger = logging.getLogger('YOLOv8Adapter')
 
 
 @dl.Package.decorators.module(description='Model Adapter for Yolov8 object detection',
@@ -45,16 +49,28 @@ class Adapter(dl.BaseModelAdapter):
         if os.path.isfile(model_filepath):
             model = YOLO(model_filepath)  # pass any model type
         else:
-            model = YOLO('yolov8n.pt')  # pass any model type
+            logger.warning(f'Model path ({model_filepath}) not found! loading default model weights')
+            model = YOLO('yolov8l.pt')  # pass any model type
         self.model = model
 
+    @staticmethod
+    def _prepare_items_image_batch(item):
+        """
+        This function will be called as preprocess between items to batch (predict_item -> predict)
+        :param item:
+        :return:
+        """
+        buffer = item.download(save_locally=False)
+        image = cv2.cvtColor(np.asarray(Image.open(buffer)), cv2.COLOR_RGB2BGR)
+        return image
+
     def train(self, data_path, output_path, **kwargs):
-        model = YOLO('yolov8n.pt')  # pass any model type
-        model.model.args.update(self.configuration.get('modelArgs', dict()))
+        self.model.model.args.update(self.configuration.get('modelArgs', dict()))
         epochs = self.configuration.get('epochs', 50)
         batch = self.configuration.get('batch', 2)
         imgsz = self.configuration.get('imgsz', 640)
         device = self.configuration.get('device', 'cpu')
+        augment = self.configuration.get('augment', True)
 
         project_name = os.path.dirname(output_path)
         name = os.path.basename(output_path)
@@ -109,17 +125,18 @@ class Adapter(dl.BaseModelAdapter):
                                              y=value))
             self.model_entity.metrics.create(samples=samples, dataset_id=self.model_entity.dataset_id)
 
-        model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
-        model.add_callback(event='on_val_end', func=on_train_epoch_end)
-        model.train(data=data_yaml_filename,
-                    exist_ok=True,  # this will override the output dir and will not create a new one
-                    epochs=epochs,
-                    batch=batch,
-                    device=device,
-                    name=name,
-                    workers=0,
-                    imgsz=imgsz,
-                    project=project_name)
+        self.model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
+        self.model.add_callback(event='on_val_end', func=on_train_epoch_end)
+        self.model.train(data=data_yaml_filename,
+                         exist_ok=True,  # this will override the output dir and will not create a new one
+                         epochs=epochs,
+                         batch=batch,
+                         device=device,
+                         augment=augment,
+                         name=name,
+                         workers=0,
+                         imgsz=imgsz,
+                         project=project_name)
 
     def predict(self, batch, **kwargs):
         results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
@@ -169,14 +186,15 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.3'),
+                                                            git_tag='v0.1.4'),
                                     modules=[modules],
                                     service_config={
-                                        'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
+                                        'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
                                                                         runner_image='ultralytics/ultralytics:latest',
                                                                         autoscaler=dl.KubernetesRabbitmqAutoscaler(
                                                                             min_replicas=0,
                                                                             max_replicas=1),
+                                                                        preemptible=False,
                                                                         concurrency=1).to_json(),
                                         'initParams': {'model_entity': None}
                                     },
@@ -214,7 +232,7 @@ def deploy():
     # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
     print(f'new mode pushed. codebase: {package.codebase}')
-    model = model_creation(package=package)
+    # model = model_creation(package=package)
     # model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
     # print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
 

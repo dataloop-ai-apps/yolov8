@@ -7,14 +7,13 @@ from PIL import Image
 
 def test_predict():
     adapter = Adapter(model_entity=model_entity)
-
-    adapter.predict_items(items=[dl.items.get(item_id='6419cbcab8ab76e9d4ebc732')])
+    adapter.predict_items(items=[dl.items.get(item_id='646ca19440ad05b862005c7f')])
     #
-    im1 = Image.open(
-        r"E:\ModelsZoo\yolov8\tmp\640ee84307a569363353ed6a\datasets\64089e249ab310729aa04aa0\train\images\train\batch_1__000050.jpg")
-    results = adapter.model.predict(source=im1, save=True, save_txt=True)  # save predictions as labels
-    item = dl.items.get(None, '630cd62e7a00b0b71a95196c')
-    a = adapter.predict_items(items=[item], with_upload=True)
+    # im1 = Image.open(
+    #     r"E:\ModelsZoo\yolov8\tmp\640ee84307a569363353ed6a\datasets\64089e249ab310729aa04aa0\train\images\train\batch_1__000050.jpg")
+    # results = adapter.model.predict(source=im1, save=True, save_txt=True)  # save predictions as labels
+    # item = dl.items.get(None, '630cd62e7a00b0b71a95196c')
+    # a = adapter.predict_items(items=[item], with_upload=True)
 
 
 def test_clone():
@@ -62,8 +61,9 @@ def test_remote_train(model_entity: dl.Model):
 
 
 if __name__ == "__main__":
-    dl.setenv('prod')
-    model_entity = dl.models.get(None, '643d0aa66816dd593744093e')
+    dl.setenv('rc')
+    model_entity = dl.models.get(None, '646ca27d13cba4ebf34594e4')
     package = model_entity.package
     # model_entity.bucket.upload(r"C:\Users\Shabtay\Downloads\New folder")
-    test_local_train(model_entity=model_entity)
+    # test_local_train(model_entity=model_entity)
+    test_predict()
