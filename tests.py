@@ -20,10 +20,10 @@ def test_clone():
     to_dataset = dl.datasets.get(None, '630caf79ee6c90226a406f31')
     to_project = to_dataset.project
 
-    m = model_entity.clone(model_name='fruits with figures exp2',
+    m = model_entity.clone(model_name='clone to delete',
                            description='exp 2',
                            # labels=list(to_dataset.labels_flat_dict.keys()),
-                           dataset=to_dataset,
+                           # dataset=to_dataset,
                            configuration={'num_epochs': 20,
                                           'batch_size': 4},
                            project_id=to_project.id)
@@ -62,8 +62,8 @@ def test_remote_train(model_entity: dl.Model):
 
 if __name__ == "__main__":
     dl.setenv('rc')
-    model_entity = dl.models.get(None, '646ca27d13cba4ebf34594e4')
+    model_entity = dl.models.get(None, '647edf924b4c50afa52f690c')
     package = model_entity.package
     # model_entity.bucket.upload(r"C:\Users\Shabtay\Downloads\New folder")
-    # test_local_train(model_entity=model_entity)
-    test_predict()
+    test_local_train(model_entity=model_entity)
+    # test_predict()

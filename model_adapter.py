@@ -108,25 +108,25 @@ class Adapter(dl.BaseModelAdapter):
         yaml_save(file=data_yaml_filename, data=data)
         faas_callback = kwargs.get('on_epoch_end_callback')
 
-        def on_train_epoch_end(train_obj):
-            is_train = train_obj.model.training
-            if is_train:
-                self.current_epoch = train_obj.epoch
-                metrics = train_obj.metrics
-            else:
-                metrics = train_obj.get_stats()
+        def on_epoch_end(train_obj):
+
+            self.current_epoch = train_obj.epoch
+            metrics = train_obj.metrics
+            train_obj.plot_metrics()
             if faas_callback is not None:
                 faas_callback(self.current_epoch, epochs)
             samples = list()
-            for figure, value in metrics.items():
+            for metric_name, value in metrics.items():
+                legend, figure = metric_name.split('/')
                 samples.append(dl.PlotSample(figure=figure,
-                                             legend='train' if is_train is True else 'validation',
+                                             legend=legend,
                                              x=self.current_epoch,
                                              y=value))
             self.model_entity.metrics.create(samples=samples, dataset_id=self.model_entity.dataset_id)
 
-        self.model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
-        self.model.add_callback(event='on_val_end', func=on_train_epoch_end)
+        # self.model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
+        # self.model.add_callback(event='on_val_end', func=on_train_epoch_end)
+        self.model.add_callback(event='on_fit_epoch_end', func=on_epoch_end)
         self.model.train(data=data_yaml_filename,
                          exist_ok=True,  # this will override the output dir and will not create a new one
                          epochs=epochs,
@@ -186,7 +186,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.4'),
+                                                            git_tag='v0.1.5'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
