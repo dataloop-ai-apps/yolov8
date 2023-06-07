@@ -67,7 +67,7 @@ class Adapter(dl.BaseModelAdapter):
     def train(self, data_path, output_path, **kwargs):
         self.model.model.args.update(self.configuration.get('modelArgs', dict()))
         epochs = self.configuration.get('epochs', 50)
-        batch = self.configuration.get('batch', 2)
+        batch_size = self.configuration.get('batch_size', 2)
         imgsz = self.configuration.get('imgsz', 640)
         device = self.configuration.get('device', 'cpu')
         augment = self.configuration.get('augment', True)
@@ -130,7 +130,7 @@ class Adapter(dl.BaseModelAdapter):
         self.model.train(data=data_yaml_filename,
                          exist_ok=True,  # this will override the output dir and will not create a new one
                          epochs=epochs,
-                         batch=batch,
+                         batch=batch_size,
                          device=device,
                          augment=augment,
                          name=name,
@@ -155,6 +155,7 @@ class Adapter(dl.BaseModelAdapter):
                                                                    label=label
                                                                    ),
                                       model_info={'name': self.model_entity.name,
+                                                  'model_id': self.model_entity.id,
                                                   'confidence': float(conf)})
             batch_annotations.append(image_annotations)
         return batch_annotations
@@ -170,7 +171,7 @@ def package_creation(project: dl.Project):
     metadata = dl.Package.get_ml_metadata(cls=Adapter,
                                           default_configuration={'weights_filename': 'yolov8n.pt',
                                                                  'epochs': 10,
-                                                                 'batch': 4,
+                                                                 'batch_size': 4,
                                                                  'imgsz': 640,
                                                                  'conf_thres': 0.25,
                                                                  'iou_thres': 0.45,
@@ -186,7 +187,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.5'),
+                                                            git_tag='v0.1.6'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,

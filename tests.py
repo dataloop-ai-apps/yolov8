@@ -65,5 +65,6 @@ if __name__ == "__main__":
     model_entity = dl.models.get(None, '647edf924b4c50afa52f690c')
     package = model_entity.package
     # model_entity.bucket.upload(r"C:\Users\Shabtay\Downloads\New folder")
-    test_local_train(model_entity=model_entity)
+    # test_local_train(model_entity=model_entity)
+    test_remote_train(model_entity=model_entity)
     # test_predict()
