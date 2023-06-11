@@ -187,7 +187,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.7'),
+                                                            git_tag='v0.1.8'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
@@ -219,7 +219,7 @@ def model_creation(package: dl.Package):
                                       'weights_filename': 'yolov8n.pt',
                                       'imgz': 640,
                                       'device': 'cuda:0',
-                                      'id_to_label_map': {ind: label for ind, label in enumerate(labels)}},
+                                      'id_to_label_map': labels},
                                   project_id=package.project.id,
                                   labels=list(labels.values())
                                   )
@@ -229,13 +229,12 @@ def model_creation(package: dl.Package):
 def deploy():
     dl.setenv('prod')
     project_name = 'DataloopModels'
-    # project_name = 'ipm-distillator-test'
     project = dl.projects.get(project_name)
     # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
     print(f'new mode pushed. codebase: {package.codebase}')
     model = model_creation(package=package)
-    model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
+    model_entity = package.models.list().print()
     print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
 
 
