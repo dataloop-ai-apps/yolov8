@@ -187,7 +187,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.6'),
+                                                            git_tag='v0.1.7'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
@@ -197,6 +197,7 @@ def package_creation(project: dl.Project):
                                                                             max_replicas=1),
                                                                         preemptible=False,
                                                                         concurrency=1).to_json(),
+                                        'executionTimeout': 10 * 3600,
                                         'initParams': {'model_entity': None}
                                     },
                                     metadata=metadata)
@@ -226,20 +227,20 @@ def model_creation(package: dl.Package):
 
 
 def deploy():
-    dl.setenv('rc')
+    dl.setenv('prod')
     project_name = 'DataloopModels'
     # project_name = 'ipm-distillator-test'
     project = dl.projects.get(project_name)
     # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
     print(f'new mode pushed. codebase: {package.codebase}')
-    # model = model_creation(package=package)
-    # model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
-    # print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
+    model = model_creation(package=package)
+    model_entity = dl.models.get(model_id='640ee84307a569363353ed6a')
+    print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
 
 
 if __name__ == "__main__":
-    # deploy()
+    deploy()
     ...
     # test_predict()
 

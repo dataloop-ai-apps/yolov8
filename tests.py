@@ -57,7 +57,7 @@ def test_local_train(model_entity):
 
 
 def test_remote_train(model_entity: dl.Model):
-    model_entity.train()
+    print(model_entity.train())
 
 
 if __name__ == "__main__":
