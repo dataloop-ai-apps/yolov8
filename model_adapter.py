@@ -138,6 +138,11 @@ class Adapter(dl.BaseModelAdapter):
                          imgsz=imgsz,
                          project=project_name)
 
+    def prepare_item_func(self, item):
+        buffer = item.download(save_locally=False)
+        image = Image.open(buffer).convert('RGB')
+        return image
+
     def predict(self, batch, **kwargs):
         results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
         batch_annotations = list()
@@ -221,7 +226,9 @@ def model_creation(package: dl.Package):
                                       'device': 'cuda:0',
                                       'id_to_label_map': labels},
                                   project_id=package.project.id,
-                                  labels=list(labels.values())
+                                  labels=list(labels.values()),
+                                  input_type='image',
+                                  output_type='box'
                                   )
     return model
 
