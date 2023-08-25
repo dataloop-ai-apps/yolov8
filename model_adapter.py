@@ -46,6 +46,8 @@ class Adapter(dl.BaseModelAdapter):
     def load(self, local_path, **kwargs):
         model_filename = self.configuration.get('model_filename', 'yolov8n.pt')
         model_filepath = os.path.join(local_path, model_filename)
+        # first load official model -https://github.com/ultralytics/ultralytics/issues/3856
+        _ = YOLO('yolov8l.pt')
         if os.path.isfile(model_filepath):
             model = YOLO(model_filepath)  # pass any model type
         else:
@@ -192,7 +194,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.8'),
+                                                            git_tag='v0.1.9'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
@@ -234,19 +236,19 @@ def model_creation(package: dl.Package):
 
 
 def deploy():
-    dl.setenv('prod')
+    dl.setenv('rc')
     project_name = 'DataloopModels'
     project = dl.projects.get(project_name)
     # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
     package = package_creation(project=project)
     print(f'new mode pushed. codebase: {package.codebase}')
-    model = model_creation(package=package)
-    model_entity = package.models.list().print()
-    print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
+    # model = model_creation(package=package)
+    # model_entity = package.models.list().print()
+    # print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
 
 
 if __name__ == "__main__":
-    deploy()
+    # deploy()
     ...
     # test_predict()
 

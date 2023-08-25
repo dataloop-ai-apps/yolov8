@@ -60,11 +60,18 @@ def test_remote_train(model_entity: dl.Model):
     print(model_entity.train())
 
 
+def test_evaluate_local(model_entity):
+    adapter = Adapter(model_entity=model_entity)
+    dataset = dl.datasets.get(dataset_id='6485b9736105cc248bf7c052')
+    adapter.evaluate_model(model=model_entity, dataset=dataset)
+
+
 if __name__ == "__main__":
     dl.setenv('rc')
-    model_entity = dl.models.get(None, '647edf924b4c50afa52f690c')
+    model_entity = dl.models.get(None, '6486cae0b864431f3ff6b7db')
     package = model_entity.package
     # model_entity.bucket.upload(r"C:\Users\Shabtay\Downloads\New folder")
     # test_local_train(model_entity=model_entity)
-    test_remote_train(model_entity=model_entity)
+    # test_remote_train(model_entity=model_entity)
     # test_predict()
+    test_evaluate_local(model_entity=model_entity)
