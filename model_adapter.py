@@ -194,7 +194,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.9'),
+                                                            git_tag='v0.1.10'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
@@ -236,7 +236,7 @@ def model_creation(package: dl.Package):
 
 
 def deploy():
-    dl.setenv('rc')
+    dl.setenv('prod')
     project_name = 'DataloopModels'
     project = dl.projects.get(project_name)
     # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
