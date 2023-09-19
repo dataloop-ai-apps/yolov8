@@ -55,17 +55,6 @@ class Adapter(dl.BaseModelAdapter):
             model = YOLO('yolov8l.pt')  # pass any model type
         self.model = model
 
-    @staticmethod
-    def _prepare_items_image_batch(item):
-        """
-        This function will be called as preprocess between items to batch (predict_item -> predict)
-        :param item:
-        :return:
-        """
-        buffer = item.download(save_locally=False)
-        image = cv2.cvtColor(np.asarray(Image.open(buffer)), cv2.COLOR_RGB2BGR)
-        return image
-
     def train(self, data_path, output_path, **kwargs):
         self.model.model.args.update(self.configuration.get('modelArgs', dict()))
         epochs = self.configuration.get('epochs', 50)
@@ -141,8 +130,21 @@ class Adapter(dl.BaseModelAdapter):
                          project=project_name)
 
     def prepare_item_func(self, item):
-        buffer = item.download(save_locally=False)
-        image = Image.open(buffer).convert('RGB')
+        filename = item.download(overwrite=True)
+        image = Image.open(filename)
+        # Check if the image has EXIF data
+        if hasattr(image, '_getexif'):
+            exif_data = image._getexif()
+            # Get the EXIF orientation tag (if available)
+            orientation = exif_data.get(0x0112)
+            # Rotate the image based on the orientation tag
+            if orientation == 3:
+                image = image.rotate(180, expand=True)
+            elif orientation == 6:
+                image = image.rotate(270, expand=True)
+            elif orientation == 8:
+                image = image.rotate(90, expand=True)
+        image = image.convert('RGB')
         return image
 
     def predict(self, batch, **kwargs):
@@ -194,10 +196,10 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.10'),
+                                                            git_tag='v0.1.11'),
                                     modules=[modules],
                                     service_config={
-                                        'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_GPU_K80_S,
+                                        'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
                                                                         runner_image='ultralytics/ultralytics:latest',
                                                                         autoscaler=dl.KubernetesRabbitmqAutoscaler(
                                                                             min_replicas=0,
