@@ -16,7 +16,7 @@ logger = logging.getLogger('YOLOv8Adapter')
 class Adapter(dl.BaseModelAdapter):
     def save(self, local_path, **kwargs):
         self.model_entity.artifacts.upload(os.path.join(local_path, '*'))
-        self.configuration.update({'model_filename': 'weights/best.pt'})
+        self.configuration.update({'weights_filename': 'weights/best.pt'})
 
     def convert_from_dtlpy(self, data_path, **kwargs):
         train_path = os.path.join(data_path, 'train', 'json')
@@ -44,7 +44,7 @@ class Adapter(dl.BaseModelAdapter):
                                     from_format='dataloop')
 
     def load(self, local_path, **kwargs):
-        model_filename = self.configuration.get('model_filename', 'yolov8n.pt')
+        model_filename = self.configuration.get('weights_filename', 'yolov8n.pt')
         model_filepath = os.path.join(local_path, model_filename)
         # first load official model -https://github.com/ultralytics/ultralytics/issues/3856
         _ = YOLO('yolov8l.pt')
@@ -52,7 +52,7 @@ class Adapter(dl.BaseModelAdapter):
             model = YOLO(model_filepath)  # pass any model type
         else:
             logger.warning(f'Model path ({model_filepath}) not found! loading default model weights')
-            model = YOLO('yolov8l.pt')  # pass any model type
+            model = YOLO(model_filename)  # pass any model type
         self.model = model
 
     def train(self, data_path, output_path, **kwargs):
@@ -62,6 +62,7 @@ class Adapter(dl.BaseModelAdapter):
         imgsz = self.configuration.get('imgsz', 640)
         device = self.configuration.get('device', 'cpu')
         augment = self.configuration.get('augment', True)
+        yaml_config = self.configuration.get('yaml_config', dict())
 
         project_name = os.path.dirname(output_path)
         name = os.path.basename(output_path)
@@ -89,14 +90,14 @@ class Adapter(dl.BaseModelAdapter):
         # train_lables_path
         # train_images_path
 
-        data = {
-            'path': os.path.realpath(data_path),  # must be full path otherwise the train adds "datasets" to it
-            'train': 'train/images',
-            'val': 'validation/images',
-            'names': self.model_entity.labels
-        }
+        yaml_config.update(
+            {'path': os.path.realpath(data_path),  # must be full path otherwise the train adds "datasets" to it
+             'train': 'train/images',
+             'val': 'validation/images',
+             'names': self.model_entity.labels
+             })
         data_yaml_filename = os.path.join(data_path, f'{self.model_entity.dataset_id}.yaml')
-        yaml_save(file=data_yaml_filename, data=data)
+        yaml_save(file=data_yaml_filename, data=yaml_config)
         faas_callback = kwargs.get('on_epoch_end_callback')
 
         def on_epoch_end(train_obj):
@@ -138,7 +139,7 @@ class Adapter(dl.BaseModelAdapter):
             # Get the EXIF orientation tag (if available)
             if exif_data is not None:
                 orientation = exif_data.get(0x0112)
-                if orientation is not  None:
+                if orientation is not None:
                     # Rotate the image based on the orientation tag
                     if orientation == 3:
                         image = image.rotate(180, expand=True)
@@ -198,17 +199,17 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.12'),
+                                                            git_tag='v0.1.13'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
-                                                                        runner_image='ultralytics/ultralytics:latest',
+                                                                        runner_image='ultralytics/ultralytics:8.0.183',
                                                                         autoscaler=dl.KubernetesRabbitmqAutoscaler(
                                                                             min_replicas=0,
                                                                             max_replicas=1),
                                                                         preemptible=False,
                                                                         concurrency=1).to_json(),
-                                        'executionTimeout': 100 * 3600,
+                                        'executionTimeout': 10000 * 3600,
                                         'initParams': {'model_entity': None}
                                     },
                                     metadata=metadata)

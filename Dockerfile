@@ -1,2 +1,0 @@
-FROM ultralytics/ultralytics:latest
-
