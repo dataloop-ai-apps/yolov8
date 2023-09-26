@@ -136,14 +136,16 @@ class Adapter(dl.BaseModelAdapter):
         if hasattr(image, '_getexif'):
             exif_data = image._getexif()
             # Get the EXIF orientation tag (if available)
-            orientation = exif_data.get(0x0112)
-            # Rotate the image based on the orientation tag
-            if orientation == 3:
-                image = image.rotate(180, expand=True)
-            elif orientation == 6:
-                image = image.rotate(270, expand=True)
-            elif orientation == 8:
-                image = image.rotate(90, expand=True)
+            if exif_data is not None:
+                orientation = exif_data.get(0x0112)
+                if orientation is not  None:
+                    # Rotate the image based on the orientation tag
+                    if orientation == 3:
+                        image = image.rotate(180, expand=True)
+                    elif orientation == 6:
+                        image = image.rotate(270, expand=True)
+                    elif orientation == 8:
+                        image = image.rotate(90, expand=True)
         image = image.convert('RGB')
         return image
 
@@ -196,7 +198,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.11'),
+                                                            git_tag='v0.1.12'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
@@ -206,7 +208,7 @@ def package_creation(project: dl.Project):
                                                                             max_replicas=1),
                                                                         preemptible=False,
                                                                         concurrency=1).to_json(),
-                                        'executionTimeout': 10 * 3600,
+                                        'executionTimeout': 100 * 3600,
                                         'initParams': {'model_entity': None}
                                     },
                                     metadata=metadata)
