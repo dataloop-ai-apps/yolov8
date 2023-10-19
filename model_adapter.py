@@ -1,3 +1,4 @@
+import torch
 from ultralytics import YOLO
 from ultralytics.yolo.utils import yaml_save
 import dtlpy as dl
@@ -60,9 +61,12 @@ class Adapter(dl.BaseModelAdapter):
         epochs = self.configuration.get('epochs', 50)
         batch_size = self.configuration.get('batch_size', 2)
         imgsz = self.configuration.get('imgsz', 640)
-        device = self.configuration.get('device', 'cpu')
+        device = self.configuration.get('device', None)
         augment = self.configuration.get('augment', True)
         yaml_config = self.configuration.get('yaml_config', dict())
+
+        if device is None:
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         project_name = os.path.dirname(output_path)
         name = os.path.basename(output_path)
@@ -187,8 +191,7 @@ def package_creation(project: dl.Project):
                                                                  'imgsz': 640,
                                                                  'conf_thres': 0.25,
                                                                  'iou_thres': 0.45,
-                                                                 'max_det': 1000,
-                                                                 'device': 'cuda:0'},
+                                                                 'max_det': 1000},
                                           output_type=dl.AnnotationType.BOX,
                                           )
     modules = dl.PackageModule.from_entry_point(entry_point='model_adapter.py')
@@ -199,7 +202,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.13'),
+                                                            git_tag='v0.1.14'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
@@ -230,7 +233,6 @@ def model_creation(package: dl.Package):
                                   configuration={
                                       'weights_filename': 'yolov8n.pt',
                                       'imgz': 640,
-                                      'device': 'cuda:0',
                                       'id_to_label_map': labels},
                                   project_id=package.project.id,
                                   labels=list(labels.values()),
