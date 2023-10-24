@@ -22,14 +22,13 @@ class Adapter(dl.BaseModelAdapter):
     def convert_from_dtlpy(self, data_path, **kwargs):
         train_path = os.path.join(data_path, 'train', 'json')
         validation_path = os.path.join(data_path, 'validation', 'json')
-        labels = list(self.model_entity.dataset.instance_map.keys())
-        labels.sort()
+        label_to_id_map = self.model_entity.label_to_id_map
 
         #################
         # Convert Train #
         #################
         converter = dl.utilities.converter.Converter()
-        converter.labels = {label: i for i, label in enumerate(labels)}
+        converter.labels = label_to_id_map
         converter.convert_directory(local_path=train_path,
                                     dataset=self.model_entity.dataset,
                                     to_format='yolo',
@@ -38,7 +37,7 @@ class Adapter(dl.BaseModelAdapter):
         # Convert Validation #
         ######################
         converter = dl.utilities.converter.Converter()
-        converter.labels = {label: i for i, label in enumerate(labels)}
+        converter.labels = label_to_id_map
         converter.convert_directory(local_path=validation_path,
                                     dataset=self.model_entity.dataset,
                                     to_format='yolo',
@@ -72,14 +71,16 @@ class Adapter(dl.BaseModelAdapter):
         name = os.path.basename(output_path)
 
         # https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data#13-organize-directories
+        train_name = 'train'
+        val_name = 'validation'
         src_images_path_train = os.path.join(data_path, 'train', 'items')
-        dst_images_path_train = os.path.join(data_path, 'train', 'images')
+        dst_images_path_train = os.path.join(data_path, train_name, 'images')
         src_images_path_val = os.path.join(data_path, 'validation', 'items')
-        dst_images_path_val = os.path.join(data_path, 'validation', 'images')
+        dst_images_path_val = os.path.join(data_path, val_name, 'images')
         src_labels_path_train = os.path.join(data_path, 'train', 'yolo')
-        dst_labels_path_train = os.path.join(data_path, 'train', 'labels')
+        dst_labels_path_train = os.path.join(data_path, train_name, 'labels')
         src_labels_path_val = os.path.join(data_path, 'validation', 'yolo')
-        dst_labels_path_val = os.path.join(data_path, 'validation', 'labels')
+        dst_labels_path_val = os.path.join(data_path, val_name, 'labels')
 
         if not os.path.exists(dst_images_path_train) and os.path.exists(src_images_path_train):
             os.rename(src_images_path_train, dst_images_path_train)
@@ -90,14 +91,33 @@ class Adapter(dl.BaseModelAdapter):
         if not os.path.exists(dst_labels_path_val) and os.path.exists(src_labels_path_val):
             os.rename(src_labels_path_val, dst_labels_path_val)
 
+        # yolov8 bug - if there are two directories "images" in the path it fails to get annotations
+        paths = [dst_images_path_train, dst_images_path_val, dst_labels_path_train, dst_labels_path_val]
+        allowed = [1, 1, 0, 0]
+        for path, allow in zip(paths, allowed):
+            subfolders = [x[0] for x in os.walk(path)]
+            for subfolder in subfolders:
+                relpath = os.path.relpath(subfolder, data_path)
+                dirs = relpath.split(os.sep)
+                c = 0
+                for i_dir, dirname in enumerate(dirs):
+                    if dirname == 'images':
+                        c += 1
+                        if c > allow:
+                            dirs[i_dir] = 'imagesssss'
+                new_subfolder = os.path.join(data_path, *dirs)
+                if subfolder != new_subfolder:
+                    print(new_subfolder)
+                    os.rename(subfolder, new_subfolder)
+
         # validation_images_path
         # train_lables_path
         # train_images_path
 
         yaml_config.update(
             {'path': os.path.realpath(data_path),  # must be full path otherwise the train adds "datasets" to it
-             'train': 'train/images',
-             'val': 'validation/images',
+             'train': train_name,
+             'val': val_name,
              'names': self.model_entity.labels
              })
         data_yaml_filename = os.path.join(data_path, f'{self.model_entity.dataset_id}.yaml')
