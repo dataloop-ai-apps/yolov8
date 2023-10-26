@@ -1,14 +1,17 @@
-import torch
-from ultralytics import YOLO
 from ultralytics.yolo.utils import yaml_save
-import dtlpy as dl
+from ultralytics import YOLO
 from PIL import Image
-import cv2
-import numpy as np
+
+import dtlpy as dl
 import logging
+import torch
+import PIL
 import os
 
 logger = logging.getLogger('YOLOv8Adapter')
+
+# set max image size
+PIL.Image.MAX_IMAGE_PIXELS = 933120000
 
 
 @dl.Package.decorators.module(description='Model Adapter for Yolov8 object detection',
@@ -20,6 +23,31 @@ class Adapter(dl.BaseModelAdapter):
         self.configuration.update({'weights_filename': 'weights/best.pt'})
 
     def convert_from_dtlpy(self, data_path, **kwargs):
+        ##############
+        # Validation #
+        ##############
+
+        subsets = self.model_entity.metadata.get("system", dict()).get("subsets", None)
+        if 'train' not in subsets:
+            raise ValueError(
+                'Couldnt find train set. Yolov8 requires train and validation set for training. Add a train set DQL filter in the dl.Model metadata')
+        if 'validation' not in subsets:
+            raise ValueError(
+                'Couldnt find validation set. Yolov8 requires train and validation set for training. Add a validation set DQL filter in the dl.Model metadata')
+
+        for subset, filters_dict in subsets.items():
+            filters = dl.Filters(custom_filter=filters_dict)
+            filters.add_join(field='type', values='box')
+            filters.page_size = 0
+            pages = self.model_entity.dataset.items.list(filters=filters)
+            if pages.items_count == 0:
+                raise ValueError(
+                    f'Could find box annotations in subset {subset}. Cannot train without annotation in the data subsets')
+
+        #########
+        # Paths #
+        #########
+
         train_path = os.path.join(data_path, 'train', 'json')
         validation_path = os.path.join(data_path, 'validation', 'json')
         label_to_id_map = self.model_entity.label_to_id_map
@@ -114,12 +142,17 @@ class Adapter(dl.BaseModelAdapter):
         # train_lables_path
         # train_images_path
 
-        yaml_config.update(
-            {'path': os.path.realpath(data_path),  # must be full path otherwise the train adds "datasets" to it
-             'train': train_name,
-             'val': val_name,
-             'names': self.model_entity.labels
-             })
+        # check if validation exists
+        if os.path.isdir(dst_images_path_val):
+            raise ValueError(
+                'Couldnt find validation set. Yolov8 requires train and validation set for training. Add a validation set DQL filter in the dl.Model metadata')
+        params = {'path': os.path.realpath(data_path),  # must be full path otherwise the train adds "datasets" to it
+                  'train': train_name,
+                  'val': val_name,
+                  'names': self.model_entity.labels
+                  }
+
+        yaml_config.update(params)
         data_yaml_filename = os.path.join(data_path, f'{self.model_entity.dataset_id}.yaml')
         yaml_save(file=data_yaml_filename, data=yaml_config)
         faas_callback = kwargs.get('on_epoch_end_callback')
@@ -222,7 +255,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.14'),
+                                                            git_tag='v0.1.16'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
