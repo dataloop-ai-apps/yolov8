@@ -146,6 +146,10 @@ class Adapter(dl.BaseModelAdapter):
         if not os.path.isdir(dst_images_path_val):
             raise ValueError(
                 'Couldnt find validation set. Yolov8 requires train and validation set for training. Add a validation set DQL filter in the dl.Model metadata')
+        if len(self.model_entity.labels) == 0:
+            raise ValueError(
+                'model.labels is empty. Model entity must have labels')
+
         params = {'path': os.path.realpath(data_path),  # must be full path otherwise the train adds "datasets" to it
                   'train': train_name,
                   'val': val_name,
@@ -255,7 +259,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.17'),
+                                                            git_tag='v0.1.18'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
