@@ -176,12 +176,15 @@ class Adapter(dl.BaseModelAdapter):
                                              x=self.current_epoch,
                                              y=value))
             self.model_entity.metrics.create(samples=samples, dataset_id=self.model_entity.dataset_id)
+            # save model output after each epoch end
+            self.save_to_model(local_path=output_path, cleanup=False)
 
         # self.model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
         # self.model.add_callback(event='on_val_end', func=on_train_epoch_end)
         self.model.add_callback(event='on_fit_epoch_end', func=on_epoch_end)
         self.model.train(data=data_yaml_filename,
                          exist_ok=True,  # this will override the output dir and will not create a new one
+                         resume=True,
                          epochs=epochs,
                          batch=batch_size,
                          device=device,
@@ -259,7 +262,7 @@ def package_creation(project: dl.Project):
                                     is_global=True,
                                     package_type='ml',
                                     codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
-                                                            git_tag='v0.1.19'),
+                                                            git_tag='v0.1.20'),
                                     modules=[modules],
                                     service_config={
                                         'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
