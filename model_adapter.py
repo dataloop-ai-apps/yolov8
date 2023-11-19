@@ -86,14 +86,15 @@ class Adapter(dl.BaseModelAdapter):
     def train(self, data_path, output_path, **kwargs):
         self.model.model.args.update(self.configuration.get('modelArgs', dict()))
         epochs = self.configuration.get('epochs', 50)
+        start_epoch = self.configuration.get('start_epoch', 0)
         batch_size = self.configuration.get('batch_size', 2)
         imgsz = self.configuration.get('imgsz', 640)
         device = self.configuration.get('device', None)
         augment = self.configuration.get('augment', True)
         yaml_config = self.configuration.get('yaml_config', dict())
-
+        resume = start_epoch > 0
         if device is None:
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         project_name = os.path.dirname(output_path)
         name = os.path.basename(output_path)
@@ -177,6 +178,7 @@ class Adapter(dl.BaseModelAdapter):
                                              y=value))
             self.model_entity.metrics.create(samples=samples, dataset_id=self.model_entity.dataset_id)
             # save model output after each epoch end
+            self.configuration['start_epoch'] = self.current_epoch + 1
             self.save_to_model(local_path=output_path, cleanup=False)
 
         # self.model.add_callback(event='on_train_epoch_end', func=on_train_epoch_end)
@@ -184,7 +186,7 @@ class Adapter(dl.BaseModelAdapter):
         self.model.add_callback(event='on_fit_epoch_end', func=on_epoch_end)
         self.model.train(data=data_yaml_filename,
                          exist_ok=True,  # this will override the output dir and will not create a new one
-                         resume=True,
+                         resume=resume,
                          epochs=epochs,
                          batch=batch_size,
                          device=device,
