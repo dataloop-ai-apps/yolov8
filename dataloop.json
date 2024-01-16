@@ -1,0 +1,128 @@
+{
+  "name": "yolov8",
+  "displayName": "YOLOv8",
+  "version": "v0.1.22",
+  "scope": "public",
+  "description": "YOLOv8 Model Application",
+  "codebase": {
+    "type": "git",
+    "gitUrl": "https://github.com/dataloop-ai-apps/yolov8.git",
+    "gitTag": "v0.1.22"
+  },
+  "components": {
+    "computeConfigs": [
+      {
+        "name": "yolov8-deploy",
+        "runtime": {
+          "podType": "regular-xs",
+          "concurrency": 1,
+          "runnerImage": "ultralytics/ultralytics:8.0.183",
+          "autoscaler": {
+            "type": "rabbitmq",
+            "minReplicas": 0,
+            "maxReplicas": 2,
+            "queueLength": 100
+          },
+          "preemptible": false
+        }
+      },
+      {
+        "name": "yolov8-train-evaluate",
+        "driverId": "",
+        "runtime": {
+          "podType": "gpu-t4",
+          "concurrency": 1,
+          "runnerImage": "ultralytics/ultralytics:8.0.183",
+          "autoscaler": {
+            "type": "rabbitmq",
+            "minReplicas": 0,
+            "maxReplicas": 2,
+            "queueLength": 100
+          },
+          "preemptible": false
+        }
+      }
+    ],
+    "modules": [
+      {
+        "name": "yolov8-module",
+        "entryPoint": "model_adapter.py",
+        "className": "Adapter",
+        "computeConfig": "yolov8-deploy",
+        "description": "YoloV8 Module",
+        "initInputs": [
+          {
+            "type": "Model",
+            "name": "model_entity"
+          }
+        ],
+        "functions": [
+          {
+            "name": "evaluate_model",
+            "computeConfig": "yolov8-train-evaluate",
+            "input": [
+              {
+                "type": "Model",
+                "name": "model",
+                "description": "Dataloop Model Entity"
+              }
+            ],
+            "output": [],
+            "displayName": "Evaluate a Model",
+            "displayIcon": "",
+            "description": "Function to evaluate YOLOv8 model performance"
+          },
+          {
+            "name": "predict_items",
+            "input": [
+              {
+                "type": "Item[]",
+                "name": "items",
+                "description": "List of items to run inference on"
+              }
+            ],
+            "output": [],
+            "displayName": "Predict Items",
+            "displayIcon": "",
+            "description": "Function to run YOLOv8 inference on items"
+          },
+          {
+            "name": "train_model",
+            "computeConfig": "yolov8-train-evaluate",
+            "input": [
+              {
+                "type": "Model",
+                "name": "model",
+                "description": "Dataloop Model Entity"
+              }
+            ],
+            "output": [],
+            "displayName": "Train a Model",
+            "displayIcon": "",
+            "description": "Function to train YOLOv8 model"
+          }
+        ]
+      }
+    ],
+    "models": [
+      {
+        "name": "yolov8",
+        "moduleName": "yolov8-module",
+        "scope": "project",
+        "status": "trained",
+        "configuration": {
+          "weights_filename": "yolov8n.pt",
+          "epochs": 10,
+          "batch_size": 4,
+          "imgsz": 640,
+          "conf_thres": 0.25,
+          "iou_thres": 0.45,
+          "max_det": 1000
+        },
+        "inputType": "image",
+        "outputType": "box",
+        "description": "Ultralytics YOLOv8 represents a modernized iteration, refining the successes of prior YOLO models. With added features and improvements, it aims to enhance both performance and versatility. YOLOv8 prioritizes speed, accuracy, and user-friendly design, making it a reliable option for tasks like object detection, tracking, instance segmentation, image classification, and pose estimation"
+      }
+    ]
+  }
+}
