@@ -1,7 +1,7 @@
 {
   "name": "yolov8",
   "displayName": "YOLOv8",
-  "version": "v0.1.30",
+  "version": "v0.1.31",
   "scope": "public",
   "description": "YOLOv8 Model Application",
   "attributes": {
@@ -14,7 +14,7 @@
   "codebase": {
     "type": "git",
     "gitUrl": "https://github.com/dataloop-ai-apps/yolov8.git",
-    "gitTag": "v0.1.30"
+    "gitTag": "v0.1.31"
   },
   "components": {
     "computeConfigs": [
