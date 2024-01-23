@@ -119,7 +119,7 @@
         "name": "yolov8",
         "moduleName": "yolov8-module",
         "scope": "project",
-        "status": "pretrained",
+        "status": "pre-trained",
         "configuration": {
           "weights_filename": "yolov8n.pt",
           "epochs": 10,
