@@ -5,7 +5,7 @@
   "scope": "public",
   "description": "YOLOv8 Model Application",
   "attributes": {
-    "Provider": "Dataloop",
+    "Provider": "UltraLytics",
     "License": "AGPL-3.0",
     "Category": "Model",
     "Computer Vision": "Object Detection",
@@ -119,7 +119,7 @@
         "name": "yolov8",
         "moduleName": "yolov8-module",
         "scope": "project",
-        "status": "trained",
+        "status": "pretrained",
         "configuration": {
           "weights_filename": "yolov8n.pt",
           "epochs": 10,
