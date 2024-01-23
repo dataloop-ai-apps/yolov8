@@ -20,6 +20,9 @@
     "computeConfigs": [
       {
         "name": "yolov8-deploy",
+        "versions": {
+          "dtlpy": "1.89.11"
+        },
         "runtime": {
           "podType": "regular-xs",
           "concurrency": 1,
@@ -29,13 +32,14 @@
             "minReplicas": 0,
             "maxReplicas": 2,
             "queueLength": 100
-          },
-          "preemptible": false
+          }
         }
       },
       {
         "name": "yolov8-train-evaluate",
-        "driverId": "",
+        "versions": {
+          "dtlpy": "1.89.11"
+        },
         "runtime": {
           "podType": "gpu-t4",
           "concurrency": 1,
@@ -45,8 +49,7 @@
             "minReplicas": 0,
             "maxReplicas": 2,
             "queueLength": 100
-          },
-          "preemptible": false
+          }
         }
       }
     ],
