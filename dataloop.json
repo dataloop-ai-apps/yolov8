@@ -5,7 +5,7 @@
   "scope": "public",
   "description": "YOLOv8 Model Application",
   "attributes": {
-    "Provider": "UltraLytics",
+    "Provider": "Ultralytics",
     "License": "AGPL-3.0",
     "Category": "Model",
     "Computer Vision": "Object Detection",
