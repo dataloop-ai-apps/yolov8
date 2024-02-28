@@ -115,6 +115,25 @@
             "displayName": "Train a Model",
             "displayIcon": "",
             "description": "Function to train YOLOv8 model"
+          },
+          {
+            "name": "predict_dataset",
+            "input": [
+              {
+                "type": "Dataset",
+                "name": "dataset",
+                "description": ""
+              },
+              {
+                "type": "Json",
+                "name": "filters",
+                "description": "Dataloop Filter DQL"
+              }
+            ],
+            "output": [],
+            "displayName": "Predict Items",
+            "displayIcon": "",
+            "description": "Function to run YOLOv8 inference on a whole dataset"
           }
         ]
       }
