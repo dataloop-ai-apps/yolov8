@@ -83,7 +83,18 @@
                 "description": "Dataloop Dataset Entity"
               }
             ],
-            "output": [],
+            "output": [
+              {
+                "type": "Model",
+                "name": "model",
+                "description": "Dataloop Model Entity"
+              },
+              {
+                "type": "Dataset",
+                "name": "dataset",
+                "description": "Dataloop Dataset Entity"
+              }
+            ],
             "displayName": "Evaluate a Model",
             "displayIcon": "",
             "description": "Function to evaluate YOLOv8 model performance"
@@ -97,10 +108,40 @@
                 "description": "List of items to run inference on"
               }
             ],
-            "output": [],
+            "output": [
+               {
+                 "type": "Item[]",
+                 "name": "items",
+                 "description": "The same input images for prediction."
+               },
+               {
+                 "type": "Annotation[]",
+                 "name": "annotations",
+                 "description": "The predicted annotations."
+               }
+            ],
             "displayName": "Predict Items",
             "displayIcon": "",
             "description": "Function to run YOLOv8 inference on items"
+          },
+          {
+            "name": "predict_dataset",
+            "input": [
+              {
+                "type": "Dataset",
+                "name": "dataset",
+                "description": ""
+              },
+              {
+                "type": "Json",
+                "name": "filters",
+                "description": "Dataloop Filter DQL"
+              }
+            ],
+            "output": [],
+            "displayName": "Predict Dataset",
+            "displayIcon": "",
+            "description": "Function to run YOLOv8 inference on a dataset."
           },
           {
             "name": "train_model",
@@ -112,7 +153,13 @@
                 "description": "Dataloop Model Entity"
               }
             ],
-            "output": [],
+            "output": [
+              {
+                "type": "Model",
+                "name": "model",
+                "description": "Dataloop Model Entity"
+              }
+            ],,
             "displayName": "Train a Model",
             "displayIcon": "",
             "description": "Function to train YOLOv8 model"
