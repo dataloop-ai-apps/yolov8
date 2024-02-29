@@ -159,7 +159,7 @@
                 "name": "model",
                 "description": "Dataloop Model Entity"
               }
-            ],,
+            ],
             "displayName": "Train a Model",
             "displayIcon": "",
             "description": "Function to train YOLOv8 model"
