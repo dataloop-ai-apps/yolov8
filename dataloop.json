@@ -50,7 +50,8 @@
             "maxReplicas": 2,
             "queueLength": 100
           }
-        }
+        },
+        "executionTimeout": 36000000
       }
     ],
     "modules": [
