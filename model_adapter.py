@@ -79,8 +79,7 @@ class Adapter(dl.BaseModelAdapter):
         if os.path.isfile(model_filepath):
             model = YOLO(model_filepath)  # pass any model type
         else:
-            logger.warning(f'Model path ({model_filepath}) not found! loading default model weights')
-            model = YOLO('yolov8l.pt')  # pass any model type
+            raise dl.exceptions.NotFound(f'Model path ({model_filepath}) not found!')
         self.model = model
 
     def train(self, data_path, output_path, **kwargs):
