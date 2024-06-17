@@ -20,9 +20,6 @@
     "computeConfigs": [
       {
         "name": "yolov8-deploy",
-        "versions": {
-          "dtlpy": "1.90.37"
-        },
         "runtime": {
           "podType": "regular-xs",
           "concurrency": 1,
@@ -37,9 +34,6 @@
       },
       {
         "name": "yolov8-train-evaluate",
-        "versions": {
-          "dtlpy": "1.90.37"
-        },
         "runtime": {
           "podType": "gpu-t4",
           "concurrency": 1,
