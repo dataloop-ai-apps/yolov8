@@ -77,17 +77,34 @@ class E2ETestCase(unittest.TestCase):
     def test_yolov8_train(self):
         """
         Test the yolov8 train pipeline steps:
-        1. Create pipeline
+        1. Create the pipeline and set the model as the input for the Train node
         2. Assume the model is already connected to an existing dataset for training
-        3. Execute the pipeline
-        :return:
+        3. Execute the pipeline with the input: model
+        4. Wait for the pipeline cycle to finish with status success
         """
         pass
 
     def test_yolov8_predict(self):
+        """
+        Test the yolov8 predict pipeline steps:
+        1. Create the pipeline
+        2. Assume the model is already connected to an existing dataset connected to it
+        3. Use filters to get the item/s for predict
+        4. Execute the pipeline with the input: item/s
+        5. Wait for the pipeline cycle to finish with status success
+        """
         pass
 
     def test_yolov8_evaluate(self):
+        """
+        Test the yolov8 evaluate pipeline steps:
+        1. Create the pipeline
+        2. Assume the model is already connected to an existing dataset connected to it
+        3. Assume the dataset has the default evaluation metadata applied on the data.
+        4. Get the model dataset and the default filters
+        5. Execute the pipeline with the input: model, dataset and filters
+        6. Wait for the pipeline cycle to finish with status success
+        """
         pass
 
 
