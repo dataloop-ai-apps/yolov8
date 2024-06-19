@@ -1,0 +1,24 @@
+{
+  "name": "yolov8-tests",
+  "displayName": "YOLOv8-Tests",
+  "version": "0.1.41",
+  "scope": "public",
+  "description": "YOLOv8 Model Application Tests",
+  "attributes": {
+    "Provider": "Ultralytics",
+    "License": "AGPL-3.0",
+    "Category": "Model",
+    "Computer Vision": "Object Detection",
+    "Media Type": "Image"
+  },
+  "codebase": {
+    "type": "git",
+    "gitUrl": "https://github.com/dataloop-ai-apps/yolov8.git",
+    "gitTag": "0.1.41"
+  },
+  "dependencies": [
+    {
+      "name": "yolov8"
+    }
+  ]
+}
