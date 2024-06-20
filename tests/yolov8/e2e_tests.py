@@ -89,7 +89,7 @@ class E2ETestCase(unittest.TestCase):
         Test the yolov8 predict pipeline steps:
         1. Create the pipeline
         2. Assume the model is already connected to an existing dataset connected to it
-        3. Use filters to get the item/s for predict
+        3. Use filters to get the item/s for predict (filters should be in a config)
         4. Execute the pipeline with the input: item/s
         5. Wait for the pipeline cycle to finish with status success
         """
@@ -101,7 +101,7 @@ class E2ETestCase(unittest.TestCase):
         1. Create the pipeline
         2. Assume the model is already connected to an existing dataset connected to it
         3. Assume the dataset has the default evaluation metadata applied on the data.
-        4. Get the model dataset and the default filters
+        4. Get the model dataset and the default filters (filters should be in a config)
         5. Execute the pipeline with the input: model, dataset and filters
         6. Wait for the pipeline cycle to finish with status success
         """
