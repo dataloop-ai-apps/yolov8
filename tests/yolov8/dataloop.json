@@ -19,8 +19,8 @@
   "components": {
     "pipelineTemplates": [
       {
-        "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
-        "orgId": "353c6795-56cd-48b9-8a26-c2686fbd01c3",
+        "projectId": null,
+        "orgId": null,
         "connections": [
 
         ],
@@ -35,7 +35,7 @@
 
         ],
         "description": "",
-        "name": "YOLO Train",
+        "name": "YOLOv8 Train",
         "templateKind": "org",
         "nodes": [
           {
@@ -64,12 +64,12 @@
             "type": "ml",
             "namespace": {
               "functionName": "train",
-              "projectName": "ofir_huggingface",
+              "projectName": null,
               "serviceName": "model-mgmt-app-train",
               "moduleName": "yolov8-module",
               "packageName": "model-mgmt-app"
             },
-            "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+            "projectId": null,
             "metadata": {
               "position": {
                 "x": 9934.3515625,
@@ -84,8 +84,8 @@
         "_id": "6673e8600e19f410aebfa3a3"
       },
       {
-        "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
-        "orgId": "353c6795-56cd-48b9-8a26-c2686fbd01c3",
+        "projectId": null,
+        "orgId": null,
         "connections": [
 
         ],
@@ -100,7 +100,7 @@
 
         ],
         "description": "",
-        "name": "YOLO Predict",
+        "name": "YOLOv8 Predict",
         "templateKind": "org",
         "nodes": [
           {
@@ -137,12 +137,12 @@
             "type": "ml",
             "namespace": {
               "functionName": "predict",
-              "projectName": "ofir_huggingface",
+              "projectName": null,
               "serviceName": "predict-6673de14baf2ad3e2afa9b3a",
               "moduleName": "yolov8-module",
               "packageName": "model-mgmt-app"
             },
-            "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+            "projectId": null,
             "metadata": {
               "position": {
                 "x": 9908.3515625,
@@ -160,8 +160,8 @@
         "_id": "6673e8eb0e19f4851fbfa77d"
       },
       {
-        "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
-        "orgId": "353c6795-56cd-48b9-8a26-c2686fbd01c3",
+        "projectId": null,
+        "orgId": null,
         "connections": [
 
         ],
@@ -176,7 +176,7 @@
 
         ],
         "description": "",
-        "name": "YOLO Evaluate",
+        "name": "YOLOv8 Evaluate",
         "templateKind": "org",
         "nodes": [
           {
@@ -229,12 +229,12 @@
             "type": "ml",
             "namespace": {
               "functionName": "evaluate",
-              "projectName": "ofir_huggingface",
+              "projectName": null,
               "serviceName": "model-mgmt-app-evaluate",
               "moduleName": "yolov8-module",
               "packageName": "model-mgmt-app"
             },
-            "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+            "projectId": null,
             "metadata": {
               "position": {
                 "x": 490,
