@@ -16,6 +16,241 @@
     "gitUrl": "https://github.com/dataloop-ai-apps/yolov8.git",
     "gitTag": "0.1.41"
   },
+  "components": {
+    "pipelineTemplates": [
+      {
+        "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+        "orgId": "353c6795-56cd-48b9-8a26-c2686fbd01c3",
+        "connections": [
+
+        ],
+        "startNodes": [
+          {
+            "nodeId": "31a4c26b-91f5-4cee-bc9e-17f5f7d6bbdb",
+            "type": "root",
+            "id": "8f6d4248-a7bb-4f5a-b203-8cfa0af42591"
+          }
+        ],
+        "variables": [
+
+        ],
+        "description": "",
+        "name": "YOLO Train",
+        "templateKind": "org",
+        "nodes": [
+          {
+            "id": "31a4c26b-91f5-4cee-bc9e-17f5f7d6bbdb",
+            "inputs": [
+              {
+                "portId": "4ae08564-a5b2-4c67-8762-f5419a03167d",
+                "nodeId": "4ae08564-a5b2-4c67-8762-f5419a03167d",
+                "type": "Model",
+                "name": "model",
+                "displayName": "model",
+                "io": "input"
+              }
+            ],
+            "outputs": [
+              {
+                "portId": "1b43ec86-262b-4b45-b18f-36aba3cf513f",
+                "nodeId": "1b43ec86-262b-4b45-b18f-36aba3cf513f",
+                "type": "Model",
+                "name": "model",
+                "displayName": "model",
+                "io": "output"
+              }
+            ],
+            "name": "YOLOv8",
+            "type": "ml",
+            "namespace": {
+              "functionName": "train",
+              "projectName": "ofir_huggingface",
+              "serviceName": "model-mgmt-app-train",
+              "moduleName": "yolov8-module",
+              "packageName": "model-mgmt-app"
+            },
+            "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+            "metadata": {
+              "position": {
+                "x": 9934.3515625,
+                "y": 10055.5,
+                "z": 0
+              },
+              "repeatable": true
+            }
+          }
+        ],
+        "preview": "6673e7dc70272364b30d3717",
+        "_id": "6673e8600e19f410aebfa3a3"
+      },
+      {
+        "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+        "orgId": "353c6795-56cd-48b9-8a26-c2686fbd01c3",
+        "connections": [
+
+        ],
+        "startNodes": [
+          {
+            "nodeId": "002db81a-5f34-418d-b780-9928aee7468f",
+            "type": "root",
+            "id": "3bd4100e-28ef-4b4b-93a2-2de59596dbe6"
+          }
+        ],
+        "variables": [
+
+        ],
+        "description": "",
+        "name": "YOLO Predict",
+        "templateKind": "org",
+        "nodes": [
+          {
+            "id": "002db81a-5f34-418d-b780-9928aee7468f",
+            "inputs": [
+              {
+                "portId": "9a717ca3-bd33-4f3d-92fa-737fd03b8828",
+                "nodeId": "9a717ca3-bd33-4f3d-92fa-737fd03b8828",
+                "type": "Item",
+                "name": "item",
+                "displayName": "item",
+                "io": "input"
+              }
+            ],
+            "outputs": [
+              {
+                "portId": "00312e63-7345-4939-a9f7-ff2be2f62abf",
+                "nodeId": "00312e63-7345-4939-a9f7-ff2be2f62abf",
+                "type": "Item",
+                "name": "item",
+                "displayName": "item",
+                "io": "output"
+              },
+              {
+                "portId": "6c5593ae-571e-4729-9e06-b272309bdf4f",
+                "nodeId": "6c5593ae-571e-4729-9e06-b272309bdf4f",
+                "type": "Annotation[]",
+                "name": "annotations",
+                "displayName": "annotations",
+                "io": "output"
+              }
+            ],
+            "name": "yolov8",
+            "type": "ml",
+            "namespace": {
+              "functionName": "predict",
+              "projectName": "ofir_huggingface",
+              "serviceName": "predict-6673de14baf2ad3e2afa9b3a",
+              "moduleName": "yolov8-module",
+              "packageName": "model-mgmt-app"
+            },
+            "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+            "metadata": {
+              "position": {
+                "x": 9908.3515625,
+                "y": 10119.5,
+                "z": 0
+              },
+              "serviceConfig": {
+
+              },
+              "repeatable": true
+            }
+          }
+        ],
+        "preview": "6673e801f9349e740df9b593",
+        "_id": "6673e8eb0e19f4851fbfa77d"
+      },
+      {
+        "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+        "orgId": "353c6795-56cd-48b9-8a26-c2686fbd01c3",
+        "connections": [
+
+        ],
+        "startNodes": [
+          {
+            "nodeId": "6dcd4db2-9f49-4f94-89cb-2c83f44b33ac",
+            "type": "root",
+            "id": "848be03f-ea34-41ac-bc85-83811f729ff9"
+          }
+        ],
+        "variables": [
+
+        ],
+        "description": "",
+        "name": "YOLO Evaluate",
+        "templateKind": "org",
+        "nodes": [
+          {
+            "id": "6dcd4db2-9f49-4f94-89cb-2c83f44b33ac",
+            "inputs": [
+              {
+                "portId": "e0fd1c33-66d8-4d5b-9c65-6e28dae6b6ee",
+                "nodeId": "e0fd1c33-66d8-4d5b-9c65-6e28dae6b6ee",
+                "type": "Model",
+                "name": "model",
+                "displayName": "model",
+                "io": "input"
+              },
+              {
+                "portId": "bf81ad7c-b00a-4ba5-9cb5-f943898f7a65",
+                "nodeId": "bf81ad7c-b00a-4ba5-9cb5-f943898f7a65",
+                "type": "Dataset",
+                "name": "dataset",
+                "displayName": "dataset",
+                "io": "input"
+              },
+              {
+                "portId": "6457b846-72fa-400e-89b6-c12b65a9df96",
+                "nodeId": "6457b846-72fa-400e-89b6-c12b65a9df96",
+                "type": "Json",
+                "name": "filters",
+                "displayName": "filters",
+                "io": "input"
+              }
+            ],
+            "outputs": [
+              {
+                "portId": "06de9ec9-f357-4a42-99d6-4f5e41db505e",
+                "nodeId": "06de9ec9-f357-4a42-99d6-4f5e41db505e",
+                "type": "Model",
+                "name": "model",
+                "displayName": "model",
+                "io": "output"
+              },
+              {
+                "portId": "2a514750-737a-4372-b5cb-9b69910f28e6",
+                "nodeId": "2a514750-737a-4372-b5cb-9b69910f28e6",
+                "type": "Dataset",
+                "name": "dataset",
+                "displayName": "dataset",
+                "io": "output"
+              }
+            ],
+            "name": "YOLOv8",
+            "type": "ml",
+            "namespace": {
+              "functionName": "evaluate",
+              "projectName": "ofir_huggingface",
+              "serviceName": "model-mgmt-app-evaluate",
+              "moduleName": "yolov8-module",
+              "packageName": "model-mgmt-app"
+            },
+            "projectId": "e0b61a98-928b-4412-b30b-d0a96bb67790",
+            "metadata": {
+              "position": {
+                "x": 490,
+                "y": 704.5,
+                "z": 0
+              },
+              "repeatable": true
+            }
+          }
+        ],
+        "preview": "6673e81df9349e19adf9b72f",
+        "_id": "6673e904f9349e4de4f9bdae"
+      }
+    ],
+    "services": null
+  },
   "dependencies": [
     {
       "name": "yolov8"
