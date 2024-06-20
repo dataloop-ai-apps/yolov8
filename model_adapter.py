@@ -72,14 +72,17 @@ class Adapter(dl.BaseModelAdapter):
                                     from_format='dataloop')
 
     def load(self, local_path, **kwargs):
-        model_filename = self.configuration.get('weights_filename', 'yolov8n.pt')
+        model_filename = self.configuration.get('weights_filename')
         model_filepath = os.path.join(local_path, model_filename)
         # first load official model -https://github.com/ultralytics/ultralytics/issues/3856
         _ = YOLO('yolov8l.pt')
-        if os.path.isfile(model_filepath):
-            model = YOLO(model_filepath)  # pass any model type
+        if model_filename is not None:
+            if os.path.isfile(model_filepath):
+                model = YOLO(model_filepath)  # pass any model type
+            else:
+                raise dl.exceptions.NotFound(f'Model path ({model_filepath}) not found!')
         else:
-            raise dl.exceptions.NotFound(f'Model path ({model_filepath}) not found!')
+            model = YOLO('yolov8l.pt')
         self.model = model
 
     def train(self, data_path, output_path, **kwargs):
