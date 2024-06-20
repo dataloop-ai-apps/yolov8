@@ -20,11 +20,8 @@
     "computeConfigs": [
       {
         "name": "yolov8-deploy",
-        "versions": {
-          "dtlpy": "1.90.37"
-        },
         "runtime": {
-          "podType": "regular-xs",
+          "podType": "regular-m",
           "concurrency": 1,
           "runnerImage": "dataloop_runner-gpu/ultralytics:8.0.183",
           "autoscaler": {
@@ -37,9 +34,6 @@
       },
       {
         "name": "yolov8-train-evaluate",
-        "versions": {
-          "dtlpy": "1.90.37"
-        },
         "runtime": {
           "podType": "gpu-t4",
           "concurrency": 1,
@@ -174,7 +168,7 @@
         "scope": "project",
         "status": "pre-trained",
         "configuration": {
-          "weights_filename": "yolov8n.pt",
+          "weights_filename": "yolov8l.pt",
           "epochs": 10,
           "batch_size": 4,
           "imgsz": 640,
