@@ -75,6 +75,11 @@
                 "type": "Dataset",
                 "name": "dataset",
                 "description": "Dataloop Dataset Entity"
+              },
+              {
+                "type": "Json",
+                "name": "filters",
+                "description": "Filter to select items over which to run evaluation"
               }
             ],
             "output": [
@@ -87,11 +92,6 @@
                 "type": "Dataset",
                 "name": "dataset",
                 "description": "Dataloop Dataset Entity"
-              },
-              {
-                "type": "Json",
-                "name": "filters",
-                "description": "Filter to select items over which to run evaluation"
               }
             ],
             "displayName": "Evaluate a Model",
