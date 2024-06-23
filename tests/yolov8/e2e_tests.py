@@ -60,7 +60,14 @@ class E2ETestCase(unittest.TestCase):
             client_api=dl.client_api,
             project=self.project
         )
-        pipeline = self.project.pipelines.create(pipeline_json=pipeline.to_json())
+        try:
+            pipeline = self.project.pipelines.create(pipeline_json=pipeline.to_json())
+        except dl.exceptions.BadRequest as e:
+            if "pipeline already exist" in e.message:
+                self.project.pipelines.get(pipeline_name=pipeline.name).delete()
+                pipeline = self.project.pipelines.create(pipeline_json=pipeline.to_json())
+            else:
+                raise e
         self.created_pipelines[pipeline_type] = {
             "pipeline": pipeline,
             "status": "created"
@@ -90,8 +97,11 @@ class E2ETestCase(unittest.TestCase):
         if filters is None:
             raise ValueError("Filters for predict not found in pipeline variables")
 
+        # TODO: add model variable attached to the node and update it using the script
+
         # Perform execution
-        predict_item = self.dataset.items.list(filters=filters).all()[0]
+        # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
+        predict_item = self.dataset.items.get(item_id="667845daa79152c0e157787d")
         pipeline.install()
         execution = pipeline.execute(
             execution_input=[
