@@ -3,6 +3,7 @@ import dtlpy as dl
 import os
 import json
 import time
+from copy import deepcopy
 
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
@@ -72,14 +73,16 @@ class E2ETestCase(unittest.TestCase):
 
         # Read template from dpk
         pipeline_templates = self.tests_dpk.components.pipeline_templates
-        for pipeline_template in pipeline_templates:
+        pipeline_templates_clone = deepcopy(pipeline_templates)
+        for pipeline_template in pipeline_templates_clone:
             if pipeline_type in pipeline_template["name"]:
                 pipeline = dl.Pipeline.from_json(
                     _json=pipeline_template,
                     client_api=dl.client_api,
                     project=self.project
                 )
-                break
+            else:
+                pipeline_templates.pop(pipeline_template)
 
         if pipeline is None:
             raise ValueError(f"Pipeline template of type '{pipeline_type}' not found")
@@ -175,3 +178,5 @@ class E2ETestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+    # dataset = dl.datasets.get(dataset_id="65e5a0fdfbd0a32c0905cfa1")
+    # dataset.items.download(local_path=r"C:\Users\Ofir\PycharmProjects\yolov8\tests\down")
