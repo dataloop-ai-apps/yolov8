@@ -60,6 +60,7 @@ class E2ETestCase(unittest.TestCase):
             client_api=dl.client_api,
             project=self.project
         )
+        pipeline.project_id = self.project.id
         pipeline = self.project.pipelines.create(pipeline_json=pipeline)
         self.created_pipelines[pipeline_type] = {
             "pipeline": pipeline,
