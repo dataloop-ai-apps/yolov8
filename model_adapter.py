@@ -13,6 +13,8 @@ logger = logging.getLogger('YOLOv8Adapter')
 # set max image size
 PIL.Image.MAX_IMAGE_PIXELS = 933120000
 
+DEFAULT_WEIGHTS = ['yolov8l.pt', 'yolov8m.pt', 'yolov8s.pt', 'yolov8n.pt', 'yolov8x.pt']
+
 
 @dl.Package.decorators.module(description='Model Adapter for Yolov8 object detection',
                               name='model-adapter',
@@ -72,15 +74,15 @@ class Adapter(dl.BaseModelAdapter):
                                     from_format='dataloop')
 
     def load(self, local_path, **kwargs):
-        model_filename = self.configuration.get('weights_filename', 'yolov8n.pt')
-        model_filepath = os.path.join(local_path, model_filename)
+        model_filename = self.configuration.get('weights_filename', 'yolov8l.pt')
+        model_filepath = os.path.join(local_path, model_filename) if model_filename not in DEFAULT_WEIGHTS \
+            else model_filename
         # first load official model -https://github.com/ultralytics/ultralytics/issues/3856
         _ = YOLO('yolov8l.pt')
-        if os.path.isfile(model_filepath):
+        if model_filename in DEFAULT_WEIGHTS or os.path.isfile(model_filepath):
             model = YOLO(model_filepath)  # pass any model type
         else:
-            logger.warning(f'Model path ({model_filepath}) not found! loading default model weights')
-            model = YOLO(model_filename)  # pass any model type
+            raise dl.exceptions.NotFound(f'Model path ({model_filepath}) not found!')
         self.model = model
 
     def train(self, data_path, output_path, **kwargs):

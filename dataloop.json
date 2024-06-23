@@ -21,7 +21,7 @@
       {
         "name": "yolov8-deploy",
         "runtime": {
-          "podType": "regular-xs",
+          "podType": "regular-m",
           "concurrency": 1,
           "runnerImage": "dataloop_runner-gpu/ultralytics:8.0.183",
           "autoscaler": {
@@ -173,7 +173,7 @@
         "scope": "project",
         "status": "pre-trained",
         "configuration": {
-          "weights_filename": "yolov8n.pt",
+          "weights_filename": "yolov8l.pt",
           "epochs": 10,
           "batch_size": 4,
           "imgsz": 640,
