@@ -2,23 +2,28 @@ import unittest
 import dtlpy as dl
 import os
 import json
-import time
-from copy import deepcopy
+import enum
 
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
 DATASET_NAME = "YoloV8-E2E-Tests"
+MODEL_NAME = "yolov8"
+
+
+class TestTypes(enum.Enum):
+    EVALUATE = "evaluate"
+    PREDICT = "predict"
+    TRAIN = "train"
 
 
 class E2ETestCase(unittest.TestCase):
-    model_name = "yolov8"
+    model: dl.Model = None
     project: dl.Project = None
     dataset: dl.Dataset = None
     model_tests_path: str = os.path.dirname(os.path.abspath(__file__))
-    created_pipelines = list()
-    test_filters = dict()
+    created_pipelines = dict()
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -31,65 +36,40 @@ class E2ETestCase(unittest.TestCase):
             cls.dataset = cls.project.datasets.get(dataset_name=DATASET_NAME)
         except dl.exceptions.NotFound:
             cls.dataset = cls.project.datasets.create(dataset_name=DATASET_NAME)
-
-        # Update the dpk
-        dataloop_json_filepath = os.path.join(cls.model_tests_path, 'dataloop.json')
-        with open(dataloop_json_filepath, 'r') as f:
-            dataloop_json = json.load(f)
-        dataloop_json.pop('codebase')
-        dpk = dl.Dpk.from_json(_json=dataloop_json, client_api=dl.client_api, project=cls.project)
-        dpk.scope = "project"
-        dpk.name = f'{dataloop_json["name"]}-{cls.project.id}'
-        dpk.displayName = f'{dataloop_json["name"]}-{cls.project.id}'
-
-        # Publish dpk and install app
-        cls.tests_dpk = cls.project.dpks.publish(dpk=dpk)
-        cls.tests_app = cls.project.apps.install(dpk=cls.tests_dpk)
+        cls.model = cls.project.models.get(model_name=MODEL_NAME)
 
         # Define filters
         predict_filters = dl.Filters(field="metadata.system.tags.predict", values=True)
-        # train_filters = dl.Filters()
-        # validation_filters = dl.Filters()
-        evaluate_filters = dl.Filters(field="metadata.system.tags.evaluate", values=True)
-        cls.test_filters["predict"] = predict_filters
-        # cls.test_filters["train"] = train_filters
-        # cls.test_filters["validation"] = validation_filters
-        cls.test_filters["evaluate"] = evaluate_filters
+        evaluate_filters = dl.Filters(field="metadata.system.tags.test", values=True)
+        # TODO: Read filters from pipeline variables
 
     @classmethod
     def tearDownClass(cls) -> None:
         # Delete all pipelines
-        for pipeline in cls.created_pipelines:
-            pipeline.delete()
-
-        # Uninstall the app and delete the dpk
-        cls.tests_app.uninstall()
-        cls.tests_dpk.delete()
+        for pipeline_data in cls.created_pipelines.values():
+            if pipeline_data["status"] == dl.ExecutionStatus.SUCCESS.value:
+                pipeline = pipeline_data["pipeline"]
+                pipeline.delete()
 
         dl.logout()
 
-    def create_pipeline(self, pipeline_type: str) -> dl.Pipeline:
-        pipeline = None
-
-        # Read template from dpk
-        pipeline_templates = self.tests_dpk.components.pipeline_templates
-        pipeline_templates_clone = deepcopy(pipeline_templates)
-        for pipeline_template in pipeline_templates_clone:
-            if pipeline_type in pipeline_template["name"]:
-                pipeline = dl.Pipeline.from_json(
-                    _json=pipeline_template,
-                    client_api=dl.client_api,
-                    project=self.project
-                )
-            else:
-                pipeline_templates.pop(pipeline_template)
-
-        if pipeline is None:
-            raise ValueError(f"Pipeline template of type '{pipeline_type}' not found")
+    def create_pipeline(self, pipeline_type: TestTypes) -> dl.Pipeline:
+        # Read template from template
+        pipeline_template_filepath = os.path.join(self.model_tests_path, pipeline_type.value, 'pipeline_template.json')
+        with open(pipeline_template_filepath, 'r') as f:
+            pipeline_template = json.load(f)
 
         # Create pipeline
+        pipeline = dl.Pipeline.from_json(
+            _json=pipeline_template,
+            client_api=dl.client_api,
+            project=self.project
+        )
         pipeline = self.project.pipelines.create(pipeline_json=pipeline)
-        self.created_pipelines.append(pipeline)
+        self.created_pipelines[pipeline_type] = {
+            "pipeline": pipeline,
+            "status": "created"
+        }
         return pipeline
 
     # Test functions
@@ -102,12 +82,18 @@ class E2ETestCase(unittest.TestCase):
         4. Execute the pipeline with the input: item/s
         5. Wait for the pipeline cycle to finish with status success
         """
-        pipeline_type = "predict"
+        pipeline_type = TestTypes.PREDICT
         pipeline = self.create_pipeline(pipeline_type=pipeline_type)
-        predict_node: dl.PipelineNode = pipeline.nodes[0]
-        predict_node.metadata["modelId"] = self.tests_app.models[0].id
 
-        predict_item = self.dataset.items.list(filters=self.test_filters[pipeline_type]).all()[0]
+        filters = None
+        variable: dl.Variable
+        for variable in pipeline.variables:
+            if variable.name == "predict_filters":
+                filters = dl.Filters(custom_filter=variable.value)
+
+        if filters is None:
+            raise ValueError("Filters for predict not found in pipeline variables")
+        predict_item = self.dataset.items.list(filters=filters).all()[0]
         execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
@@ -119,7 +105,8 @@ class E2ETestCase(unittest.TestCase):
         )
         # TODO: Validate the SDK to wait for pipeline cycle to finish
         execution = execution.wait()
-        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS)
+        self.created_pipelines[pipeline_type]["status"] = execution.status
+        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
 
     def test_yolov8_train(self):
         """
@@ -129,18 +116,33 @@ class E2ETestCase(unittest.TestCase):
         3. Execute the pipeline with the input: model
         4. Wait for the pipeline cycle to finish with status success
         """
-        pipeline_type = "train"
+        pipeline_type = TestTypes.TRAIN
         pipeline = self.create_pipeline(pipeline_type=pipeline_type)
 
-        # Update model with filters
-        # model = self.project.models.get(model_name=self.model_name)
+        train_filters = None
+        valid_filters = None
+        variable: dl.Variable
+        for variable in pipeline.variables:
+            if variable.name == "train_filters":
+                train_filters = dl.Filters(custom_filter=variable.value)
+            elif variable.name == "valid_filters":
+                valid_filters = dl.Filters(custom_filter=variable.value)
 
+        if train_filters is None:
+            raise ValueError("Filters for train set not found in pipeline variables")
+
+        if valid_filters is None:
+            raise ValueError("Filters for validation set not found in pipeline variables")
+
+        # TODO: Update model with filters and dataset
+        self.model._dataset = self.dataset
         execution = pipeline.execute(
             execution_input=[]
         )
         # TODO: Validate the SDK to wait for pipeline cycle to finish
         execution = execution.wait()
-        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS)
+        self.created_pipelines[pipeline_type]["status"] = execution.status
+        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
 
     def test_yolov8_evaluate(self):
         """
@@ -153,7 +155,7 @@ class E2ETestCase(unittest.TestCase):
         5. Execute the pipeline with the input: model, dataset and filters
         6. Wait for the pipeline cycle to finish with status success
         """
-        pipeline_type = "evaluate"
+        pipeline_type = TestTypes.EVALUATE
         pipeline = self.create_pipeline(pipeline_type=pipeline_type)
 
         filters = self.test_filters[pipeline_type]
@@ -173,10 +175,9 @@ class E2ETestCase(unittest.TestCase):
         )
         # TODO: Validate the SDK to wait for pipeline cycle to finish
         execution = execution.wait()
-        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS)
+        self.created_pipelines[pipeline_type]["status"] = execution.status
+        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
 
 
 if __name__ == '__main__':
     unittest.main()
-    # dataset = dl.datasets.get(dataset_id="65e5a0fdfbd0a32c0905cfa1")
-    # dataset.items.download(local_path=r"C:\Users\Ofir\PycharmProjects\yolov8\tests\down")

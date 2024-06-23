@@ -1,0 +1,76 @@
+{
+  "projectId": null,
+  "orgId": null,
+  "connections": [
+
+  ],
+  "startNodes": [
+    {
+      "nodeId": "002db81a-5f34-418d-b780-9928aee7468f",
+      "type": "root",
+      "id": "3bd4100e-28ef-4b4b-93a2-2de59596dbe6"
+    }
+  ],
+  "variables": [
+
+  ],
+  "description": "",
+  "name": "YOLOv8 Predict",
+  "templateKind": "org",
+  "nodes": [
+    {
+      "id": "002db81a-5f34-418d-b780-9928aee7468f",
+      "inputs": [
+        {
+          "portId": "9a717ca3-bd33-4f3d-92fa-737fd03b8828",
+          "nodeId": "9a717ca3-bd33-4f3d-92fa-737fd03b8828",
+          "type": "Item",
+          "name": "item",
+          "displayName": "item",
+          "io": "input"
+        }
+      ],
+      "outputs": [
+        {
+          "portId": "00312e63-7345-4939-a9f7-ff2be2f62abf",
+          "nodeId": "00312e63-7345-4939-a9f7-ff2be2f62abf",
+          "type": "Item",
+          "name": "item",
+          "displayName": "item",
+          "io": "output"
+        },
+        {
+          "portId": "6c5593ae-571e-4729-9e06-b272309bdf4f",
+          "nodeId": "6c5593ae-571e-4729-9e06-b272309bdf4f",
+          "type": "Annotation[]",
+          "name": "annotations",
+          "displayName": "annotations",
+          "io": "output"
+        }
+      ],
+      "name": "yolov8",
+      "type": "ml",
+      "namespace": {
+        "functionName": "predict",
+        "projectName": null,
+        "serviceName": "predict-6673de14baf2ad3e2afa9b3a",
+        "moduleName": "yolov8-module",
+        "packageName": "model-mgmt-app"
+      },
+      "projectId": null,
+      "metadata": {
+        "position": {
+          "x": 9908.3515625,
+          "y": 10119.5,
+          "z": 0
+        },
+        "serviceConfig": {
+
+        },
+        "repeatable": true
+      }
+    }
+  ],
+  "preview": "6673e801f9349e740df9b593",
+  "_id": "6673e8eb0e19f4851fbfa77d"
+}
