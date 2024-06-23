@@ -12,10 +12,67 @@
     }
   ],
   "variables": [
-
+    {
+      "name": "train_filters",
+      "type": "Json",
+      "description": "Train Items Filters",
+      "value": {
+        "filter": {
+          "$and": [
+            {
+              "hidden": false
+            },
+            {
+              "metadata": {
+                "system": {
+                  "tags": {
+                    "train": true
+                  }
+                }
+              }
+            },
+            {
+              "type": "file"
+            }
+          ]
+        },
+        "page": 0,
+        "pageSize": 1000,
+        "resource": "items"
+      }
+    },
+    {
+      "name": "validation_filters",
+      "type": "Json",
+      "description": "Validation Items Filters",
+      "value": {
+        "filter": {
+          "$and": [
+            {
+              "hidden": false
+            },
+            {
+              "metadata": {
+                "system": {
+                  "tags": {
+                    "validation": true
+                  }
+                }
+              }
+            },
+            {
+              "type": "file"
+            }
+          ]
+        },
+        "page": 0,
+        "pageSize": 1000,
+        "resource": "items"
+      }
+    }
   ],
   "description": "",
-  "name": "YOLOv8 Train",
+  "name": "Model Train",
   "templateKind": "org",
   "nodes": [
     {
@@ -61,5 +118,5 @@
     }
   ],
   "preview": "6673e7dc70272364b30d3717",
-  "_id": "6673e8600e19f410aebfa3a3"
+  "_id": null
 }

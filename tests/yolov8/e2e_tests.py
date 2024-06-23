@@ -82,17 +82,20 @@ class E2ETestCase(unittest.TestCase):
         4. Execute the pipeline with the input: item/s
         5. Wait for the pipeline cycle to finish with status success
         """
+        # Create pipeline
         pipeline_type = TestTypes.PREDICT
         pipeline = self.create_pipeline(pipeline_type=pipeline_type)
 
+        # Get filters
         filters = None
         variable: dl.Variable
         for variable in pipeline.variables:
             if variable.name == "predict_filters":
                 filters = dl.Filters(custom_filter=variable.value)
-
         if filters is None:
             raise ValueError("Filters for predict not found in pipeline variables")
+
+        # Perform execution
         predict_item = self.dataset.items.list(filters=filters).all()[0]
         execution = pipeline.execute(
             execution_input=[
@@ -103,7 +106,9 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
+
         # TODO: Validate the SDK to wait for pipeline cycle to finish
+        # Check the status of the pipeline execution
         execution = execution.wait()
         self.created_pipelines[pipeline_type]["status"] = execution.status
         self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
@@ -116,9 +121,11 @@ class E2ETestCase(unittest.TestCase):
         3. Execute the pipeline with the input: model
         4. Wait for the pipeline cycle to finish with status success
         """
+        # Create pipeline
         pipeline_type = TestTypes.TRAIN
         pipeline = self.create_pipeline(pipeline_type=pipeline_type)
 
+        # Get filters
         train_filters = None
         valid_filters = None
         variable: dl.Variable
@@ -127,19 +134,26 @@ class E2ETestCase(unittest.TestCase):
                 train_filters = dl.Filters(custom_filter=variable.value)
             elif variable.name == "valid_filters":
                 valid_filters = dl.Filters(custom_filter=variable.value)
-
         if train_filters is None:
             raise ValueError("Filters for train set not found in pipeline variables")
-
         if valid_filters is None:
             raise ValueError("Filters for validation set not found in pipeline variables")
 
         # TODO: Update model with filters and dataset
-        self.model._dataset = self.dataset
+        # Update model metadata
+        self.model.dataset_id = self.dataset.id
+        self.model.metadata["system"]["subsets"] = dict()
+        self.model.metadata["system"]["subsets"]["train"] = train_filters.prepare()
+        self.model.metadata["system"]["subsets"]["valid"] = valid_filters.prepare()
+        self.model.update(system_metadata=True)
+
+        # Perform execution
         execution = pipeline.execute(
             execution_input=[]
         )
+
         # TODO: Validate the SDK to wait for pipeline cycle to finish
+        # Check the status of the pipeline execution
         execution = execution.wait()
         self.created_pipelines[pipeline_type]["status"] = execution.status
         self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
@@ -155,10 +169,20 @@ class E2ETestCase(unittest.TestCase):
         5. Execute the pipeline with the input: model, dataset and filters
         6. Wait for the pipeline cycle to finish with status success
         """
+        # Create pipeline
         pipeline_type = TestTypes.EVALUATE
         pipeline = self.create_pipeline(pipeline_type=pipeline_type)
 
-        filters = self.test_filters[pipeline_type]
+        # Get filters
+        filters = None
+        variable: dl.Variable
+        for variable in pipeline.variables:
+            if variable.name == "test_filters":
+                filters = dl.Filters(custom_filter=variable.value)
+        if filters is None:
+            raise ValueError("Filters for evaluate not found in pipeline variables")
+
+        # Perform execution
         execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
@@ -173,7 +197,9 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
+
         # TODO: Validate the SDK to wait for pipeline cycle to finish
+        # Check the status of the pipeline execution
         execution = execution.wait()
         self.created_pipelines[pipeline_type]["status"] = execution.status
         self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)

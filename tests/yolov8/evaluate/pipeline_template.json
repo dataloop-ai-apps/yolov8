@@ -12,10 +12,38 @@
     }
   ],
   "variables": [
-
+    {
+      "name": "test_filters",
+      "type": "Json",
+      "description": "Test Items Filters",
+      "value": {
+        "filter": {
+          "$and": [
+            {
+              "hidden": false
+            },
+            {
+              "metadata": {
+                "system": {
+                  "tags": {
+                    "test": true
+                  }
+                }
+              }
+            },
+            {
+              "type": "file"
+            }
+          ]
+        },
+        "page": 0,
+        "pageSize": 1000,
+        "resource": "items"
+      }
+    }
   ],
   "description": "",
-  "name": "YOLOv8 Evaluate",
+  "name": "Model Evaluate",
   "templateKind": "org",
   "nodes": [
     {
@@ -85,5 +113,5 @@
     }
   ],
   "preview": "6673e81df9349e19adf9b72f",
-  "_id": "6673e904f9349e4de4f9bdae"
+  "_id": null
 }
