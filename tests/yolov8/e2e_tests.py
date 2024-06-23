@@ -38,11 +38,6 @@ class E2ETestCase(unittest.TestCase):
             cls.dataset = cls.project.datasets.create(dataset_name=DATASET_NAME)
         cls.model = cls.project.models.get(model_name=MODEL_NAME)
 
-        # Define filters
-        predict_filters = dl.Filters(field="metadata.system.tags.predict", values=True)
-        evaluate_filters = dl.Filters(field="metadata.system.tags.test", values=True)
-        # TODO: Read filters from pipeline variables
-
     @classmethod
     def tearDownClass(cls) -> None:
         # Delete all pipelines
@@ -97,6 +92,7 @@ class E2ETestCase(unittest.TestCase):
 
         # Perform execution
         predict_item = self.dataset.items.list(filters=filters).all()[0]
+        pipeline.install()
         execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
@@ -106,6 +102,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
+        pipeline.install()
 
         # TODO: Validate the SDK to wait for pipeline cycle to finish
         # Check the status of the pipeline execution
@@ -148,6 +145,7 @@ class E2ETestCase(unittest.TestCase):
         self.model.update(system_metadata=True)
 
         # Perform execution
+        pipeline.install()
         execution = pipeline.execute(
             execution_input=[]
         )
@@ -183,6 +181,7 @@ class E2ETestCase(unittest.TestCase):
             raise ValueError("Filters for evaluate not found in pipeline variables")
 
         # Perform execution
+        pipeline.install()
         execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
