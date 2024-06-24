@@ -109,6 +109,7 @@ class E2ETestCase(unittest.TestCase):
         # Perform execution
         # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
         predict_item = self.dataset.items.get(item_id="667845daa79152c0e157787d")
+        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
         pipeline.install()
         execution = pipeline.execute(
             execution_input=[
