@@ -55,19 +55,15 @@ class E2ETestCase(unittest.TestCase):
             pipeline_template = json.load(f)
 
         # Create pipeline
-        pipeline = dl.Pipeline.from_json(
-            _json=pipeline_template,
-            client_api=dl.client_api,
-            project=self.project
-        )
+        pipeline_template["name"] = f'{pipeline_template["name"]}-{self.project.id}'
+        pipeline_template["projectId"] = self.project.id
         try:
-            pipeline = self.project.pipelines.create(pipeline_json=pipeline.to_json())
-        except dl.exceptions.BadRequest as e:
-            if "pipeline already exist" in e.message:
-                self.project.pipelines.get(pipeline_name=pipeline.name).delete()
-                pipeline = self.project.pipelines.create(pipeline_json=pipeline.to_json())
-            else:
-                raise e
+            pipeline = self.project.pipelines.get(pipeline_name=pipeline_template["name"])
+            pipeline.delete()
+        except dl.exceptions.NotFound:
+            pass
+        pipeline = self.project.pipelines.create(pipeline_json=pipeline_template)
+
         self.created_pipelines[pipeline_type] = {
             "pipeline": pipeline,
             "status": "created"
