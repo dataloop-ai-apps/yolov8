@@ -80,15 +80,15 @@ class E2ETestCase(unittest.TestCase):
         }
         return pipeline
 
-    def _validate_pipeline_execution(self, pipeline_execution: dl.PipelineExecution):
+    def _validate_pipeline_execution(self, pipeline_execution: dl.PipelineExecution, pipeline_type: TestTypes):
         # TODO: Validate the SDK to wait for pipeline cycle to finish
         pipeline = pipeline_execution.pipeline
         in_progress_statuses = ["pending", "in-progress"]
         while pipeline_execution.status in in_progress_statuses:
             time.sleep(5)
             pipeline_execution = pipeline.pipeline_executions.get(pipeline_execution_id=pipeline_execution.id)
+        self.created_pipelines[pipeline_type]["status"] = pipeline_execution.status
         self.assertEqual(pipeline_execution.status, "success")
-
 
     # Test functions
     def test_yolov8_predict(self):
@@ -127,7 +127,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-        self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
     def test_yolov8_train(self):
         """
@@ -174,54 +174,54 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-        self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
-    # def test_yolov8_evaluate(self):
-    #     """
-    #     Test the yolov8 evaluate pipeline steps:
-    #     0. If possible run after train with the updated weights
-    #     1. Create the pipeline
-    #     2. Assume the model is already connected to an existing dataset connected to it
-    #     3. Assume the dataset has the default evaluation metadata applied on the data.
-    #     4. Get the model dataset and the default filters (filters should be in a config)
-    #     5. Execute the pipeline with the input: model, dataset and filters
-    #     6. Wait for the pipeline cycle to finish with status success
-    #     """
-    #     # Create pipeline
-    #     pipeline_type = TestTypes.EVALUATE
-    #     pipeline = self._create_pipeline(pipeline_type=pipeline_type)
-    #
-    #     # Get filters
-    #     filters = None
-    #     variable: dl.Variable
-    #     for variable in pipeline.variables:
-    #         if variable.name == "test_filters":
-    #             filters = dl.Filters(custom_filter=variable.value)
-    #     if filters is None:
-    #         raise ValueError("Filters for evaluate not found in pipeline variables")
-    #
-    #     # Perform execution
-    #     pipeline.install()
-    #     pipeline_execution = pipeline.execute(
-    #         execution_input=[
-    #             dl.FunctionIO(
-    #                 type=dl.PackageInputType.MODEL,
-    #                 value=self.model.id,
-    #                 name="model"
-    #             ),
-    #             dl.FunctionIO(
-    #                 type=dl.PackageInputType.DATASET,
-    #                 value=self.dataset.id,
-    #                 name="dataset"
-    #             ),
-    #             dl.FunctionIO(
-    #                 type=dl.PackageInputType.JSON,
-    #                 value=filters.prepare(),
-    #                 name="filters"
-    #             )
-    #         ]
-    #     )
-    #     self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
+    def test_yolov8_evaluate(self):
+        """
+        Test the yolov8 evaluate pipeline steps:
+        0. If possible run after train with the updated weights
+        1. Create the pipeline
+        2. Assume the model is already connected to an existing dataset connected to it
+        3. Assume the dataset has the default evaluation metadata applied on the data.
+        4. Get the model dataset and the default filters (filters should be in a config)
+        5. Execute the pipeline with the input: model, dataset and filters
+        6. Wait for the pipeline cycle to finish with status success
+        """
+        # Create pipeline
+        pipeline_type = TestTypes.EVALUATE
+        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
+
+        # Get filters
+        filters = None
+        variable: dl.Variable
+        for variable in pipeline.variables:
+            if variable.name == "test_filters":
+                filters = dl.Filters(custom_filter=variable.value)
+        if filters is None:
+            raise ValueError("Filters for evaluate not found in pipeline variables")
+
+        # Perform execution
+        pipeline.install()
+        pipeline_execution = pipeline.execute(
+            execution_input=[
+                dl.FunctionIO(
+                    type=dl.PackageInputType.MODEL,
+                    value=self.model.id,
+                    name="model"
+                ),
+                dl.FunctionIO(
+                    type=dl.PackageInputType.DATASET,
+                    value=self.dataset.id,
+                    name="dataset"
+                ),
+                dl.FunctionIO(
+                    type=dl.PackageInputType.JSON,
+                    value=filters.prepare(),
+                    name="filters"
+                )
+            ]
+        )
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
 
 if __name__ == '__main__':
