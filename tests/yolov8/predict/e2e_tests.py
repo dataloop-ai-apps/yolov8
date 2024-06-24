@@ -50,20 +50,8 @@ class E2ETestCase(unittest.TestCase):
         dpk_path = os.path.join(cls.config_folder, config["Common"]["dpk_path"])
         with open(dpk_path, 'r') as f:
             dpk_json = json.load(f)
-        dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=cls.project)
-        dpk.name = f"{dpk.name}-predict-{cls.project.name}"  # TODO: use sha
-        dpk.display_name = dpk.name
-        dpk.codebase = None
-
-        cls.dpk = cls.project.dpks.publish(dpk=dpk)
-        cls.app = cls.project.apps.install(dpk=cls.dpk)
-
-        filters = dl.Filters(resource=dl.FiltersResource.MODEL)
-        filters.add(field="app.id", values=cls.app.id)
-        models = cls.project.models.list(filters=filters)
-        if isinstance(models, dl.entities.PagedEntities):
-            models = models.all()
-        cls.model = models[0]
+        cls.dpk, cls.app = utils.publish_dpk_and_install_app(project=cls.project, dpk_json=dpk_json)
+        cls.model = utils.get_installed_app_model(project=cls.project, app=cls.app)
 
     @classmethod
     def tearDownClass(cls) -> None:

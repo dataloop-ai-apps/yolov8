@@ -3,9 +3,10 @@ import dtlpy as dl
 import time
 
 
-def publish_dpk_and_install_app(project: dl.Project, dpk_json: dict):
+def publish_dpk_and_install_app(project: dl.Project, dpk_json: dict) -> (dl.Dpk, dl.App):
+    # TODO: Add unique identifier to the dpk name
     dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=project)
-    dpk.name = f"{dpk.name}-predict-{project.name}"  # TODO: use sha
+    dpk.name = f"{dpk.name}-{project.name}"  # TODO: use sha
     dpk.display_name = dpk.name
     dpk.codebase = None
 
@@ -13,13 +14,15 @@ def publish_dpk_and_install_app(project: dl.Project, dpk_json: dict):
     app = project.apps.install(dpk=dpk)
     return dpk, app
 
-def get_installed_app_model(project: dl.Project, app_name: str) -> dl.App:
+
+def get_installed_app_model(project: dl.Project, app: dl.App) -> dl.Model:
     filters = dl.Filters(resource=dl.FiltersResource.MODEL)
-    filters.add(field="app.id", values=cls.app.id)
-    models = cls.project.models.list(filters=filters)
+    filters.add(field="app.id", values=app.id)
+    models = project.models.list(filters=filters)
     if isinstance(models, dl.entities.PagedEntities):
         models = models.all()
-    cls.model = models[0]
+    model = models[0]
+    return model
 
 
 def create_pipeline(project: dl.Project, pipeline_json: dict) -> dl.Pipeline:
@@ -33,7 +36,7 @@ def create_pipeline(project: dl.Project, pipeline_json: dict) -> dl.Pipeline:
 
 
 # TODO: Remove if not needed
-def _validate_pipeline_execution(pipeline_execution: dl.PipelineExecution, pipeline_type):
+def _validate_pipeline_execution(pipeline_execution: dl.PipelineExecution):
     # TODO: Validate the SDK to wait for pipeline cycle to finish
     pipeline = pipeline_execution.pipeline
     in_progress_statuses = ["pending", "in-progress"]
