@@ -63,6 +63,10 @@ class E2ETestCase(unittest.TestCase):
             if variable["name"] == "model":
                 variable["value"] = self.model.id
                 break
+        for node in pipeline_template["nodes"]:
+            if node["type"] == "ml":
+                if node["namespace"]["functionName"] in ["train", "evaluate"]:
+                    node["aiLibraryId"] = self.model.package_id
 
         # Delete the previous pipeline and create a new one
         try:
