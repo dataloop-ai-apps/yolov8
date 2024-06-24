@@ -72,7 +72,7 @@
     }
   ],
   "description": "",
-  "name": "Model Train",
+  "name": "YOLOv8-Train",
   "templateKind": "org",
   "nodes": [
     {

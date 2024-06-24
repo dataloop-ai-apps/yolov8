@@ -65,12 +65,6 @@ class E2ETestCase(unittest.TestCase):
                 variable["value"] = self.model.id
                 break
 
-        # Delete the previous pipeline and create a new one
-        # try:
-        #     pipeline = self.project.pipelines.get(pipeline_name=pipeline_template["name"])
-        #     pipeline.delete()
-        # except dl.exceptions.NotFound:
-        #     pass
         pipeline = self.project.pipelines.create(pipeline_json=pipeline_template)
 
         # TODO: identifier in order to delete test pipelines
@@ -228,5 +222,7 @@ class E2ETestCase(unittest.TestCase):
     #     self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
     #TODO: added train evaluate
+
+
 if __name__ == '__main__':
     unittest.main()

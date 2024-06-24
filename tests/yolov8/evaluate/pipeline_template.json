@@ -43,7 +43,7 @@
     }
   ],
   "description": "",
-  "name": "Model Evaluate",
+  "name": "YOLOv8-Eval",
   "templateKind": "org",
   "nodes": [
     {
