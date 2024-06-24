@@ -57,7 +57,7 @@ class E2ETestCase(unittest.TestCase):
             pipeline_template = json.load(f)
 
         # Update pipeline template
-        pipeline_template["name"] = f'{pipeline_template["name"]}-{self.project.id}'  # TODO: append git sha
+        pipeline_template["name"] = f'{pipeline_template["name"]}-{self.project.id}'[:35]  # TODO: append git sha
         pipeline_template["projectId"] = self.project.id
         for variable in pipeline_template["variables"]:
             if variable["name"] == "model":
@@ -119,7 +119,6 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-        pipeline.install()
 
         # TODO: Validate the SDK to wait for pipeline cycle to finish
         # Check the status of the pipeline execution
