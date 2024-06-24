@@ -16,13 +16,13 @@ BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
 DATASET_NAME = "YoloV8-E2E-Tests"
-# MODEL_NAME = "yolov8"
 
 
 class E2ETestCase(unittest.TestCase):
     project: dl.Project = None
     dataset: dl.Dataset = None
     dpk: dl.Dpk = None
+    app: dl.App = None
     model: dl.Model = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
     config_folder: str = os.path.join(test_folder, '..')
@@ -51,9 +51,19 @@ class E2ETestCase(unittest.TestCase):
         with open(dpk_path, 'r') as f:
             dpk_json = json.load(f)
         dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=cls.project)
-        # cls.model = cls.project.models.get(model_name=MODEL_NAME)
+        dpk.name = f"{dpk.name}-predict-{cls.project.name}"  # TODO: use sha
+        dpk.display_name = dpk.name
+        dpk.codebase = None
 
+        cls.dpk = cls.project.dpks.publish(dpk=dpk)
+        cls.app = cls.project.apps.install(dpk=cls.dpk)
 
+        filters = dl.Filters(resource=dl.FiltersResource.MODEL)
+        filters.add(field="app.id", values=cls.app.id)
+        models = cls.project.models.list(filters=filters)
+        if isinstance(models, dl.entities.PagedEntities):
+            models = models.all()
+        cls.model = models[0]
 
     @classmethod
     def tearDownClass(cls) -> None:
