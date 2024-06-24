@@ -13,6 +13,12 @@
   ],
   "variables": [
     {
+      "name": "model",
+      "type": "Model",
+      "description": "Tested Model",
+      "value": ""
+    },
+    {
       "name": "predict_filters",
       "type": "Json",
       "description": "Predict Items Filters",
@@ -76,7 +82,7 @@
           "io": "output"
         }
       ],
-      "name": "yolov8",
+      "name": "YOLOv8",
       "type": "ml",
       "namespace": {
         "functionName": "predict",
@@ -88,14 +94,17 @@
       "projectId": null,
       "metadata": {
         "position": {
-          "x": 9908.3515625,
-          "y": 10119.5,
+          "x": 10000.0,
+          "y": 10000.0,
           "z": 0
         },
+        "modelName": "yolov8",
         "serviceConfig": {
 
         },
-        "repeatable": true
+        "componentGroupName": "models",
+        "repeatable": true,
+        "variableModel": "model"
       }
     }
   ],

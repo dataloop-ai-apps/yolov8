@@ -38,9 +38,11 @@ class E2ETestCase(unittest.TestCase):
             cls.dataset = cls.project.datasets.create(dataset_name=DATASET_NAME)
         cls.model = cls.project.models.get(model_name=MODEL_NAME)
 
+        # TODO: Add dataset initialization
+
     @classmethod
     def tearDownClass(cls) -> None:
-        # Delete all pipelines
+        # Delete all passed pipelines
         for pipeline_data in cls.created_pipelines.values():
             if pipeline_data["status"] == dl.ExecutionStatus.SUCCESS.value:
                 pipeline = pipeline_data["pipeline"]
@@ -54,9 +56,15 @@ class E2ETestCase(unittest.TestCase):
         with open(pipeline_template_filepath, 'r') as f:
             pipeline_template = json.load(f)
 
-        # Create pipeline
-        pipeline_template["name"] = f'{pipeline_template["name"]}-{self.project.id}'
+        # Update pipeline template
+        pipeline_template["name"] = f'{pipeline_template["name"]}-{self.project.id}'  # TODO: append git sha
         pipeline_template["projectId"] = self.project.id
+        for variable in pipeline_template["variables"]:
+            if variable["name"] == "model":
+                variable["value"] = self.model.id
+                break
+
+        # Delete the previous pipeline and create a new one
         try:
             pipeline = self.project.pipelines.get(pipeline_name=pipeline_template["name"])
             pipeline.delete()
@@ -64,6 +72,7 @@ class E2ETestCase(unittest.TestCase):
             pass
         pipeline = self.project.pipelines.create(pipeline_json=pipeline_template)
 
+        # Save created pipeline
         self.created_pipelines[pipeline_type] = {
             "pipeline": pipeline,
             "status": "created"
@@ -92,8 +101,6 @@ class E2ETestCase(unittest.TestCase):
                 filters = dl.Filters(custom_filter=variable.value)
         if filters is None:
             raise ValueError("Filters for predict not found in pipeline variables")
-
-        # TODO: add model variable attached to the node and update it using the script
 
         # Perform execution
         # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
@@ -153,7 +160,13 @@ class E2ETestCase(unittest.TestCase):
         # Perform execution
         pipeline.install()
         execution = pipeline.execute(
-            execution_input=[]
+            execution_input=[
+                dl.FunctionIO(
+                    type=dl.PackageInputType.MODEL,
+                    value=self.model.id,
+                    name="model"
+                )
+            ]
         )
 
         # TODO: Validate the SDK to wait for pipeline cycle to finish
@@ -190,6 +203,11 @@ class E2ETestCase(unittest.TestCase):
         pipeline.install()
         execution = pipeline.execute(
             execution_input=[
+                dl.FunctionIO(
+                    type=dl.PackageInputType.MODEL,
+                    value=self.model.id,
+                    name="model"
+                ),
                 dl.FunctionIO(
                     type=dl.PackageInputType.DATASET,
                     value=self.dataset.id,
