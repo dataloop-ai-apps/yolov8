@@ -89,6 +89,7 @@ class E2ETestCase(unittest.TestCase):
             pipeline_execution = pipeline.pipeline_executions.get(pipeline_execution_id=pipeline_execution.id)
         self.assertEqual(pipeline_execution.status, "success")
 
+
     # Test functions
     def test_yolov8_predict(self):
         """
@@ -128,53 +129,53 @@ class E2ETestCase(unittest.TestCase):
         )
         self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
 
-    # def test_yolov8_train(self):
-    #     """
-    #     Test the yolov8 train pipeline steps:
-    #     1. Create the pipeline and set the model as the input for the Train node
-    #     2. Assume the model is already connected to an existing dataset for training
-    #     3. Execute the pipeline with the input: model
-    #     4. Wait for the pipeline cycle to finish with status success
-    #     """
-    #     # Create pipeline
-    #     pipeline_type = TestTypes.TRAIN
-    #     pipeline = self._create_pipeline(pipeline_type=pipeline_type)
-    #
-    #     # Get filters
-    #     train_filters = None
-    #     valid_filters = None
-    #     variable: dl.Variable
-    #     for variable in pipeline.variables:
-    #         if variable.name == "train_filters":
-    #             train_filters = dl.Filters(custom_filter=variable.value)
-    #         elif variable.name == "valid_filters":
-    #             valid_filters = dl.Filters(custom_filter=variable.value)
-    #     if train_filters is None:
-    #         raise ValueError("Filters for train set not found in pipeline variables")
-    #     if valid_filters is None:
-    #         raise ValueError("Filters for validation set not found in pipeline variables")
-    #
-    #     # TODO: Update model with filters and dataset
-    #     # Update model metadata
-    #     self.model.dataset_id = self.dataset.id
-    #     self.model.metadata["system"]["subsets"] = dict()
-    #     self.model.metadata["system"]["subsets"]["train"] = train_filters.prepare()
-    #     self.model.metadata["system"]["subsets"]["valid"] = valid_filters.prepare()
-    #     self.model.update(system_metadata=True)
-    #
-    #     # Perform execution
-    #     pipeline.install()
-    #     pipeline_execution = pipeline.execute(
-    #         execution_input=[
-    #             dl.FunctionIO(
-    #                 type=dl.PackageInputType.MODEL,
-    #                 value=self.model.id,
-    #                 name="model"
-    #             )
-    #         ]
-    #     )
-    #     self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
-    #
+    def test_yolov8_train(self):
+        """
+        Test the yolov8 train pipeline steps:
+        1. Create the pipeline and set the model as the input for the Train node
+        2. Assume the model is already connected to an existing dataset for training
+        3. Execute the pipeline with the input: model
+        4. Wait for the pipeline cycle to finish with status success
+        """
+        # Create pipeline
+        pipeline_type = TestTypes.TRAIN
+        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
+
+        # Get filters
+        train_filters = None
+        valid_filters = None
+        variable: dl.Variable
+        for variable in pipeline.variables:
+            if variable.name == "train_filters":
+                train_filters = dl.Filters(custom_filter=variable.value)
+            elif variable.name == "validation_filters":
+                valid_filters = dl.Filters(custom_filter=variable.value)
+        if train_filters is None:
+            raise ValueError("Filters for train set not found in pipeline variables")
+        if valid_filters is None:
+            raise ValueError("Filters for validation set not found in pipeline variables")
+
+        # TODO: Update model with filters and dataset
+        # Update model metadata
+        self.model.dataset_id = self.dataset.id
+        self.model.metadata["system"]["subsets"] = dict()
+        self.model.metadata["system"]["subsets"]["train"] = train_filters.prepare()
+        self.model.metadata["system"]["subsets"]["valid"] = valid_filters.prepare()
+        self.model.update(system_metadata=True)
+
+        # Perform execution
+        pipeline.install()
+        pipeline_execution = pipeline.execute(
+            execution_input=[
+                dl.FunctionIO(
+                    type=dl.PackageInputType.MODEL,
+                    value=self.model.id,
+                    name="model"
+                )
+            ]
+        )
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
+
     # def test_yolov8_evaluate(self):
     #     """
     #     Test the yolov8 evaluate pipeline steps:
