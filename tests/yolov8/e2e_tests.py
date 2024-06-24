@@ -3,6 +3,7 @@ import dtlpy as dl
 import os
 import json
 import enum
+import time
 
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
@@ -50,7 +51,7 @@ class E2ETestCase(unittest.TestCase):
 
         dl.logout()
 
-    def create_pipeline(self, pipeline_type: TestTypes) -> dl.Pipeline:
+    def _create_pipeline(self, pipeline_type: TestTypes) -> dl.Pipeline:
         # Read template from template
         pipeline_template_filepath = os.path.join(self.model_tests_path, pipeline_type.value, 'pipeline_template.json')
         with open(pipeline_template_filepath, 'r') as f:
@@ -79,6 +80,14 @@ class E2ETestCase(unittest.TestCase):
         }
         return pipeline
 
+    def _validate_pipeline_execution(self, pipeline_execution: dl.PipelineExecution):
+        # TODO: Validate the SDK to wait for pipeline cycle to finish
+        in_progress_statuses = [dl.ExecutionStatus.CREATED.value, dl.ExecutionStatus.IN_PROGRESS.value]
+        while pipeline_execution.status in in_progress_statuses:
+            time.sleep(5)
+            pipeline_execution = pipeline_execution.pipeline.pipeline_executions.get(execution_id=pipeline_execution.id)
+        self.assertEqual(pipeline_execution.status, dl.ExecutionStatus.SUCCESS.value)
+
     # Test functions
     def test_yolov8_predict(self):
         """
@@ -91,7 +100,7 @@ class E2ETestCase(unittest.TestCase):
         """
         # Create pipeline
         pipeline_type = TestTypes.PREDICT
-        pipeline = self.create_pipeline(pipeline_type=pipeline_type)
+        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
 
         # Get filters
         filters = None
@@ -107,7 +116,7 @@ class E2ETestCase(unittest.TestCase):
         predict_item = self.dataset.items.get(item_id="667845daa79152c0e157787d")
         predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
         pipeline.install()
-        execution = pipeline.execute(
+        pipeline_execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
                     type=dl.PackageInputType.ITEM,
@@ -116,12 +125,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-
-        # TODO: Validate the SDK to wait for pipeline cycle to finish
-        # Check the status of the pipeline execution
-        execution = execution.wait()
-        self.created_pipelines[pipeline_type]["status"] = execution.status
-        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
 
     def test_yolov8_train(self):
         """
@@ -133,7 +137,7 @@ class E2ETestCase(unittest.TestCase):
         """
         # Create pipeline
         pipeline_type = TestTypes.TRAIN
-        pipeline = self.create_pipeline(pipeline_type=pipeline_type)
+        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
 
         # Get filters
         train_filters = None
@@ -159,7 +163,7 @@ class E2ETestCase(unittest.TestCase):
 
         # Perform execution
         pipeline.install()
-        execution = pipeline.execute(
+        pipeline_execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
                     type=dl.PackageInputType.MODEL,
@@ -168,12 +172,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-
-        # TODO: Validate the SDK to wait for pipeline cycle to finish
-        # Check the status of the pipeline execution
-        execution = execution.wait()
-        self.created_pipelines[pipeline_type]["status"] = execution.status
-        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
 
     def test_yolov8_evaluate(self):
         """
@@ -188,7 +187,7 @@ class E2ETestCase(unittest.TestCase):
         """
         # Create pipeline
         pipeline_type = TestTypes.EVALUATE
-        pipeline = self.create_pipeline(pipeline_type=pipeline_type)
+        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
 
         # Get filters
         filters = None
@@ -201,7 +200,7 @@ class E2ETestCase(unittest.TestCase):
 
         # Perform execution
         pipeline.install()
-        execution = pipeline.execute(
+        pipeline_execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
                     type=dl.PackageInputType.MODEL,
@@ -220,12 +219,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-
-        # TODO: Validate the SDK to wait for pipeline cycle to finish
-        # Check the status of the pipeline execution
-        execution = execution.wait()
-        self.created_pipelines[pipeline_type]["status"] = execution.status
-        self.assertEqual(execution.status, dl.ExecutionStatus.SUCCESS.value)
+        self._validate_pipeline_execution(pipeline_execution=pipeline_execution)
 
 
 if __name__ == '__main__':
