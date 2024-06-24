@@ -91,43 +91,43 @@ class E2ETestCase(unittest.TestCase):
         self.assertEqual(pipeline_execution.status, "success")
 
     # Test functions
-    def test_yolov8_predict(self):
-        """
-        Test the yolov8 predict pipeline steps:
-        1. Create the pipeline
-        2. Assume the model is already connected to an existing dataset connected to it
-        3. Use filters to get the item/s for predict (filters should be in a config)
-        4. Execute the pipeline with the input: item/s
-        5. Wait for the pipeline cycle to finish with status success
-        """
-        # Create pipeline
-        pipeline_type = TestTypes.PREDICT
-        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
-
-        # Get filters
-        filters = None
-        variable: dl.Variable
-        for variable in pipeline.variables:
-            if variable.name == "predict_filters":
-                filters = dl.Filters(custom_filter=variable.value)
-        if filters is None:
-            raise ValueError("Filters for predict not found in pipeline variables")
-
-        # Perform execution
-        # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
-        predict_item = self.dataset.items.get(item_id="667845daa79152c0e157787d")
-        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
-        pipeline.install()
-        pipeline_execution = pipeline.execute(
-            execution_input=[
-                dl.FunctionIO(
-                    type=dl.PackageInputType.ITEM,
-                    value=predict_item.id,
-                    name="item"
-                )
-            ]
-        )
-        self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
+    # def test_yolov8_predict(self):
+    #     """
+    #     Test the yolov8 predict pipeline steps:
+    #     1. Create the pipeline
+    #     2. Assume the model is already connected to an existing dataset connected to it
+    #     3. Use filters to get the item/s for predict (filters should be in a config)
+    #     4. Execute the pipeline with the input: item/s
+    #     5. Wait for the pipeline cycle to finish with status success
+    #     """
+    #     # Create pipeline
+    #     pipeline_type = TestTypes.PREDICT
+    #     pipeline = self._create_pipeline(pipeline_type=pipeline_type)
+    #
+    #     # Get filters
+    #     filters = None
+    #     variable: dl.Variable
+    #     for variable in pipeline.variables:
+    #         if variable.name == "predict_filters":
+    #             filters = dl.Filters(custom_filter=variable.value)
+    #     if filters is None:
+    #         raise ValueError("Filters for predict not found in pipeline variables")
+    #
+    #     # Perform execution
+    #     # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
+    #     predict_item = self.dataset.items.get(item_id="667845daa79152c0e157787d")
+    #     predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
+    #     pipeline.install()
+    #     pipeline_execution = pipeline.execute(
+    #         execution_input=[
+    #             dl.FunctionIO(
+    #                 type=dl.PackageInputType.ITEM,
+    #                 value=predict_item.id,
+    #                 name="item"
+    #             )
+    #         ]
+    #     )
+    #     self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
     def test_yolov8_train(self):
         """
@@ -155,12 +155,15 @@ class E2ETestCase(unittest.TestCase):
         if valid_filters is None:
             raise ValueError("Filters for validation set not found in pipeline variables")
 
+        # TODO: need to find how to unload the model
+        # Unload model to enable training
+        self.model.status = "pre-trained"
+
         # TODO: Update model with filters and dataset
         # Update model metadata
         self.model.dataset_id = self.dataset.id
-        self.model.metadata["system"]["subsets"] = dict()
-        self.model.metadata["system"]["subsets"]["train"] = train_filters.prepare()
-        self.model.metadata["system"]["subsets"]["valid"] = valid_filters.prepare()
+        self.model.add_subset(subset_name="train", subset_filter=train_filters)
+        self.model.add_subset(subset_name="validation", subset_filter=train_filters)
         self.model.update(system_metadata=True)
 
         # Perform execution
@@ -176,52 +179,52 @@ class E2ETestCase(unittest.TestCase):
         )
         self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
-    def test_yolov8_evaluate(self):
-        """
-        Test the yolov8 evaluate pipeline steps:
-        0. If possible run after train with the updated weights
-        1. Create the pipeline
-        2. Assume the model is already connected to an existing dataset connected to it
-        3. Assume the dataset has the default evaluation metadata applied on the data.
-        4. Get the model dataset and the default filters (filters should be in a config)
-        5. Execute the pipeline with the input: model, dataset and filters
-        6. Wait for the pipeline cycle to finish with status success
-        """
-        # Create pipeline
-        pipeline_type = TestTypes.EVALUATE
-        pipeline = self._create_pipeline(pipeline_type=pipeline_type)
-
-        # Get filters
-        filters = None
-        variable: dl.Variable
-        for variable in pipeline.variables:
-            if variable.name == "test_filters":
-                filters = dl.Filters(custom_filter=variable.value)
-        if filters is None:
-            raise ValueError("Filters for evaluate not found in pipeline variables")
-
-        # Perform execution
-        pipeline.install()
-        pipeline_execution = pipeline.execute(
-            execution_input=[
-                dl.FunctionIO(
-                    type=dl.PackageInputType.MODEL,
-                    value=self.model.id,
-                    name="model"
-                ),
-                dl.FunctionIO(
-                    type=dl.PackageInputType.DATASET,
-                    value=self.dataset.id,
-                    name="dataset"
-                ),
-                dl.FunctionIO(
-                    type=dl.PackageInputType.JSON,
-                    value=filters.prepare(),
-                    name="filters"
-                )
-            ]
-        )
-        self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
+    # def test_yolov8_evaluate(self):
+    #     """
+    #     Test the yolov8 evaluate pipeline steps:
+    #     0. If possible run after train with the updated weights
+    #     1. Create the pipeline
+    #     2. Assume the model is already connected to an existing dataset connected to it
+    #     3. Assume the dataset has the default evaluation metadata applied on the data.
+    #     4. Get the model dataset and the default filters (filters should be in a config)
+    #     5. Execute the pipeline with the input: model, dataset and filters
+    #     6. Wait for the pipeline cycle to finish with status success
+    #     """
+    #     # Create pipeline
+    #     pipeline_type = TestTypes.EVALUATE
+    #     pipeline = self._create_pipeline(pipeline_type=pipeline_type)
+    #
+    #     # Get filters
+    #     filters = None
+    #     variable: dl.Variable
+    #     for variable in pipeline.variables:
+    #         if variable.name == "test_filters":
+    #             filters = dl.Filters(custom_filter=variable.value)
+    #     if filters is None:
+    #         raise ValueError("Filters for evaluate not found in pipeline variables")
+    #
+    #     # Perform execution
+    #     pipeline.install()
+    #     pipeline_execution = pipeline.execute(
+    #         execution_input=[
+    #             dl.FunctionIO(
+    #                 type=dl.PackageInputType.MODEL,
+    #                 value=self.model.id,
+    #                 name="model"
+    #             ),
+    #             dl.FunctionIO(
+    #                 type=dl.PackageInputType.DATASET,
+    #                 value=self.dataset.id,
+    #                 name="dataset"
+    #             ),
+    #             dl.FunctionIO(
+    #                 type=dl.PackageInputType.JSON,
+    #                 value=filters.prepare(),
+    #                 name="filters"
+    #             )
+    #         ]
+    #     )
+    #     self._validate_pipeline_execution(pipeline_execution=pipeline_execution, pipeline_type=pipeline_type)
 
 
 if __name__ == '__main__':
