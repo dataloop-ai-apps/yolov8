@@ -92,7 +92,7 @@
           "io": "output"
         }
       ],
-      "name": "YOLOv8",
+      "name": "YOLOv8 Evaluate",
       "type": "ml",
       "namespace": {
         "functionName": "evaluate",

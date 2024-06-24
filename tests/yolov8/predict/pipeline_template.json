@@ -82,7 +82,7 @@
           "io": "output"
         }
       ],
-      "name": "YOLOv8",
+      "name": "YOLOv8 Predict",
       "type": "ml",
       "namespace": {
         "functionName": "predict",
@@ -102,7 +102,6 @@
         "serviceConfig": {
 
         },
-        "componentGroupName": "models",
         "repeatable": true,
         "variableModel": "model"
       }

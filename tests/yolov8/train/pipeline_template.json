@@ -97,7 +97,7 @@
           "io": "output"
         }
       ],
-      "name": "YOLOv8",
+      "name": "YOLOv8 Train",
       "type": "ml",
       "namespace": {
         "functionName": "train",
