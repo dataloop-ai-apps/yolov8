@@ -4,6 +4,7 @@ import json
 import time
 import uuid
 import os
+import pathlib
 
 
 def create_dataset_with_tags(project: dl.Project, dpk_name: str, dataset_folder: str) -> dl.Dataset:
@@ -14,8 +15,24 @@ def create_dataset_with_tags(project: dl.Project, dpk_name: str, dataset_folder:
     dataset: dl.Dataset = project.datasets.create(dataset_name=dataset_name)
     items_path = os.path.join(dataset_folder, 'items')
     annotations_path = os.path.join(dataset_folder, 'json')
-    dataset.items.upload(local_path=items_path, local_annotations_path=annotations_path)
+    # dataset.items.upload(local_path=items_path, local_annotations_path=annotations_path)
 
+    # Upload items with their annotations and tags
+    item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_path).rglob('*'))))
+    annotation_jsons = sorted(list(pathlib.Path(annotations_path).rglob('*.json')))
+    for item_binary, annotation_json in zip(item_binaries, annotation_jsons):
+        with open(annotation_json, 'r') as f:
+            annotation_data = json.load(f)
+        item_metadata = None
+        tags_metadata = annotation_data.get("metadata", dict()).get("system", dict()).get('tags', None)
+        if tags_metadata is not None:
+            item_metadata = {"system": {"tags": tags_metadata}}
+
+        dataset.items.upload(
+            local_path=str(item_binary),
+            local_annotations_path=str(annotation_json),
+            item_metadata=item_metadata
+        )
     return dataset
 
 
