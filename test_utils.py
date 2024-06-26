@@ -21,13 +21,22 @@ def create_dataset_with_tags(project: dl.Project, dpk_name: str, dataset_folder:
     item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_path).rglob('*'))))
     annotation_jsons = sorted(list(pathlib.Path(annotations_path).rglob('*.json')))
     for item_binary, annotation_json in zip(item_binaries, annotation_jsons):
+        # Load annotation json
         with open(annotation_json, 'r') as f:
             annotation_data = json.load(f)
-        item_metadata = None
+
+        # Extract tags
+        item_metadata = dict()
         tags_metadata = annotation_data.get("metadata", dict()).get("system", dict()).get('tags', None)
         if tags_metadata is not None:
-            item_metadata = {"system": {"tags": tags_metadata}}
+            item_metadata.update({"system": {"tags": tags_metadata}})
 
+        # Extract metadata (outside of system)
+        for key, value in annotation_data.get("metadata", dict()).items():
+            if key not in ["system"]:
+                item_metadata.update({key: value})
+
+        # Upload item
         dataset.items.upload(
             local_path=str(item_binary),
             local_annotations_path=str(annotation_json),
