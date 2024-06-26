@@ -8,7 +8,7 @@ import test_utils as utils
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
-DATASET_NAME = "YoloV8-E2E-Tests"
+ENV = os.environ['ENV']
 DPK_NAME = "yolov8"
 
 
@@ -24,7 +24,7 @@ class E2ETestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        dl.setenv('rc')
+        dl.setenv(ENV)
         if dl.token_expired():
             dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         cls.project = dl.projects.get(project_id=PROJECT_ID)
