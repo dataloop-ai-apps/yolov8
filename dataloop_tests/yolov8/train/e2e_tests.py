@@ -42,6 +42,7 @@ class E2ETestCase(unittest.TestCase):
         # Delete the pipeline if passed
         if cls.pipeline_data is not None and cls.pipeline_data["status"] == dl.ExecutionStatus.SUCCESS.value:
             cls.pipeline_data["pipeline"].delete()
+            cls.model.delete()
             cls.app.uninstall()
             cls.dpk.delete()
 

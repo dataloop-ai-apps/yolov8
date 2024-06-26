@@ -69,6 +69,7 @@ def publish_dpk_and_install_app(project: dl.Project, dpk_name: str) -> (dl.Dpk, 
     dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=project)
     dpk.name = f"{dpk.name}-{identifier}"  # TODO: append git sha
     dpk.display_name = dpk.name
+    dpk.scope = "project"
     dpk.codebase = None
 
     # Publish dpk and install app
