@@ -3,9 +3,6 @@ import dtlpy as dl
 import os
 
 # TODO: change when will become a part of the SDK
-import sys
-sys.path[0] = ""
-os.chdir("../")
 import test_utils as utils
 
 
@@ -24,6 +21,7 @@ class E2ETestCase(unittest.TestCase):
     app: dl.App = None
     model: dl.Model = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
+    model_tests_folder: str = os.path.join(test_folder, '..')
     pipeline_data: dict = None
 
     @classmethod
@@ -32,12 +30,12 @@ class E2ETestCase(unittest.TestCase):
         if dl.token_expired():
             dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         cls.project = dl.projects.get(project_id=PROJECT_ID)
-        try:
-            cls.dataset = cls.project.datasets.get(dataset_name=DATASET_NAME)
-        except dl.exceptions.NotFound:
-            cls.dataset = cls.project.datasets.create(dataset_name=DATASET_NAME)
-        # TODO: Add dataset initialization
-
+        dataset_folder = os.path.join(cls.model_tests_folder, 'dataset')
+        cls.dataset = utils.create_dataset_with_tags(
+            project=cls.project,
+            dpk_name=DPK_NAME,
+            dataset_folder=dataset_folder
+        )
         cls.dpk, cls.app = utils.publish_dpk_and_install_app(project=cls.project, dpk_name=DPK_NAME)
         cls.model = utils.get_installed_app_model(project=cls.project, app=cls.app)
 
@@ -88,7 +86,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-        status = utils.validate_pipeline_execution(pipeline_execution=pipeline_execution)
+        status = utils.pipeline_execution_wait(pipeline_execution=pipeline_execution)
         self.pipeline_data["status"] = status
         self.assertEqual(status, dl.ExecutionStatus.SUCCESS.value)
 
