@@ -48,11 +48,11 @@ def create_dataset_with_tags(project: dl.Project, dpk_name: str, dataset_folder:
 def publish_dpk_and_install_app(project: dl.Project, dpk_name: str) -> (dl.Dpk, dl.App):
     # Find dpk json
     dataloop_cfg_filepath = '.dataloop.cfg'
-    config = configparser.ConfigParser()
-    config.read(dataloop_cfg_filepath)
-    dataloop_cfg_manifests = config["manifests"]
+    with open(dataloop_cfg_filepath, 'r') as f:
+        content = f.read()
+    dataloop_cfg = json.loads(content)
     dpk_json = None
-    for manifest in dataloop_cfg_manifests:
+    for manifest in dataloop_cfg.get("manifests", list()):
         dpk_json_filepath = manifest
         with open(dpk_json_filepath, 'r') as f:
             dpk_json = json.load(f)
@@ -82,7 +82,7 @@ def get_installed_app_model(project: dl.Project, app: dl.App) -> dl.Model:
     filters.add(field="app.id", values=app.id)
     models = project.models.list(filters=filters)
     if isinstance(models, dl.entities.PagedEntities):
-        models = models.all()
+        models = list(models.all())
     model = models[0]
     return model
 

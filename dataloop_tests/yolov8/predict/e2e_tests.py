@@ -5,7 +5,6 @@ import os
 # TODO: change when will become a part of the SDK
 import test_utils as utils
 
-
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
