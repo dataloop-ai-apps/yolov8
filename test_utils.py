@@ -93,8 +93,11 @@ def create_pipeline(project: dl.Project, pipeline_template_filepath: str) -> dl.
     with open(pipeline_template_filepath, 'r') as f:
         pipeline_json = json.load(f)
 
+    identifier = str(uuid.uuid4())[:8]
+    pipeline_name = f'{pipeline_json["name"]}-{identifier}'[:35]  # TODO: append git sha
+
     # Update pipeline template
-    pipeline_json["name"] = f'{pipeline_json["name"]}-{project.id}'[:35]  # TODO: append git sha
+    pipeline_json["name"] = pipeline_name
     pipeline_json["projectId"] = project.id
     pipeline = project.pipelines.create(pipeline_json=pipeline_json)
 
