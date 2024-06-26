@@ -1,12 +1,30 @@
-import json
 import dtlpy as dl
+import configparser
+import json
 import time
+import uuid
 
 
-def publish_dpk_and_install_app(project: dl.Project, dpk_json: dict) -> (dl.Dpk, dl.App):
-    # TODO: Add unique identifier to the dpk name
+def publish_dpk_and_install_app(project: dl.Project, dpk_name: str) -> (dl.Dpk, dl.App):
+    dataloop_cfg_filepath = '.dataloop.cfg'
+    config = configparser.ConfigParser()
+    config.read(dataloop_cfg_filepath)
+    dataloop_cfg_manifests = config["manifests"]
+    dpk_json = None
+    for manifest in dataloop_cfg_manifests:
+        dpk_json_filepath = manifest
+        with open(dpk_json_filepath, 'r') as f:
+            dpk_json = json.load(f)
+        if dpk_json["name"] == dpk_name:
+            break
+        dpk_json = None
+
+    if dpk_json is None:
+        raise ValueError(f"Could not find dpk with name {dpk_name} in {dataloop_cfg_filepath}")
+
+    identifier = str(uuid.uuid4())[:8]
     dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=project)
-    dpk.name = f"{dpk.name}-{project.name}"  # TODO: use sha
+    dpk.name = f"{dpk.name}-{identifier}"  # TODO: append git sha
     dpk.display_name = dpk.name
     dpk.codebase = None
 
@@ -25,7 +43,11 @@ def get_installed_app_model(project: dl.Project, app: dl.App) -> dl.Model:
     return model
 
 
-def create_pipeline(project: dl.Project, pipeline_json: dict) -> dl.Pipeline:
+def create_pipeline(project: dl.Project, pipeline_template_filepath: str) -> dl.Pipeline:
+    # Open pipeline template
+    with open(pipeline_template_filepath, 'r') as f:
+        pipeline_json = json.load(f)
+
     # Update pipeline template
     pipeline_json["name"] = f'{pipeline_json["name"]}-{project.id}'[:35]  # TODO: append git sha
     pipeline_json["projectId"] = project.id
@@ -35,12 +57,11 @@ def create_pipeline(project: dl.Project, pipeline_json: dict) -> dl.Pipeline:
     return pipeline
 
 
-# TODO: Remove if not needed
-def _validate_pipeline_execution(pipeline_execution: dl.PipelineExecution):
+def pipeline_execution_wait(pipeline_execution: dl.PipelineExecution):
     # TODO: Validate the SDK to wait for pipeline cycle to finish
     pipeline = pipeline_execution.pipeline
     in_progress_statuses = ["pending", "in-progress"]
     while pipeline_execution.status in in_progress_statuses:
         time.sleep(5)
         pipeline_execution = pipeline.pipeline_executions.get(pipeline_execution_id=pipeline_execution.id)
-    assert pipeline_execution.status == "success"
+    return pipeline_execution.status
