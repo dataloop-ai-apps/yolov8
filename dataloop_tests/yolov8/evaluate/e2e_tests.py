@@ -3,7 +3,7 @@ import dtlpy as dl
 import os
 
 # TODO: change when will become a part of the SDK
-import test_utils as utils
+from test_utils import TestsUtils
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
@@ -19,6 +19,7 @@ class E2ETestCase(unittest.TestCase):
     app: dl.App = None
     installed_models: list = None
     model: dl.Model = None
+    utils: TestsUtils = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
     model_tests_folder: str = os.path.join(test_folder, '..')
     pipeline_data: dict = dict()
@@ -29,14 +30,15 @@ class E2ETestCase(unittest.TestCase):
         if dl.token_expired():
             dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         cls.project = dl.projects.get(project_id=PROJECT_ID)
+        cls.utils = TestsUtils(project=cls.project)
+
         dataset_folder = os.path.join(cls.model_tests_folder, 'dataset')
-        cls.dataset = utils.create_dataset_with_tags(
-            project=cls.project,
+        cls.dataset = cls.utils.create_dataset_with_tags(
             dpk_name=DPK_NAME,
             dataset_folder=dataset_folder
         )
-        cls.dpk, cls.app = utils.publish_dpk_and_install_app(project=cls.project, dpk_name=DPK_NAME)
-        cls.installed_models = utils.get_installed_app_model(project=cls.project, app=cls.app)
+        cls.dpk, cls.app = cls.utils.publish_dpk_and_install_app(dpk_name=DPK_NAME)
+        cls.installed_models = cls.utils.get_installed_app_model(app=cls.app)
         for model in cls.installed_models:
             if "yolov8" in model.name and "large" not in model.name:
                 cls.model = model
@@ -58,7 +60,7 @@ class E2ETestCase(unittest.TestCase):
     def test_yolov8_evaluate(self):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'pipeline_template.json')
-        pipeline = utils.create_pipeline(project=self.project, pipeline_template_filepath=pipeline_template_filepath)
+        pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
         self.pipeline_data.update({"pipeline": pipeline, "status": "created"})
 
         # Get filters
@@ -91,7 +93,7 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-        status = utils.pipeline_execution_wait(pipeline_execution=pipeline_execution)
+        status = self.utils.pipeline_execution_wait(pipeline_execution=pipeline_execution)
         self.pipeline_data.update({"status": status})
         self.assertEqual(status, dl.ExecutionStatus.SUCCESS.value)
 
