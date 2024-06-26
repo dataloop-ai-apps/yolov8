@@ -78,14 +78,13 @@ def publish_dpk_and_install_app(project: dl.Project, dpk_name: str) -> (dl.Dpk, 
     return dpk, app
 
 
-def get_installed_app_model(project: dl.Project, app: dl.App) -> dl.Model:
+def get_installed_app_model(project: dl.Project, app: dl.App) -> [dl.Model]:
     filters = dl.Filters(resource=dl.FiltersResource.MODEL)
     filters.add(field="app.id", values=app.id)
     models = project.models.list(filters=filters)
     if isinstance(models, dl.entities.PagedEntities):
         models = list(models.all())
-    model = models[0]
-    return model
+    return models
 
 
 def create_pipeline(project: dl.Project, pipeline_template_filepath: str) -> dl.Pipeline:

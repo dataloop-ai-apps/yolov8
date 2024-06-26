@@ -17,10 +17,11 @@ class E2ETestCase(unittest.TestCase):
     dataset: dl.Dataset = None
     dpk: dl.Dpk = None
     app: dl.App = None
+    installed_models: list = None
     model: dl.Model = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
     model_tests_folder: str = os.path.join(test_folder, '..')
-    pipeline_data: dict = None
+    pipeline_data: dict = dict()
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -35,16 +36,22 @@ class E2ETestCase(unittest.TestCase):
             dataset_folder=dataset_folder
         )
         cls.dpk, cls.app = utils.publish_dpk_and_install_app(project=cls.project, dpk_name=DPK_NAME)
-        cls.model = utils.get_installed_app_model(project=cls.project, app=cls.app)
+        cls.installed_models = utils.get_installed_app_model(project=cls.project, app=cls.app)
+        for model in cls.installed_models:
+            if "yolov8" in model.name and "large" not in model.name:
+                cls.model = model
+                break
 
     @classmethod
     def tearDownClass(cls) -> None:
         # Delete the pipeline if passed
         if cls.pipeline_data is not None and cls.pipeline_data["status"] == dl.ExecutionStatus.SUCCESS.value:
             cls.pipeline_data["pipeline"].delete()
-            cls.model.delete()
             cls.app.uninstall()
             cls.dpk.delete()
+
+            for model in cls.installed_models:
+                model.delete()
 
         dl.logout()
 
@@ -53,7 +60,7 @@ class E2ETestCase(unittest.TestCase):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'pipeline_template.json')
         pipeline = utils.create_pipeline(project=self.project, pipeline_template_filepath=pipeline_template_filepath)
-        self.pipeline_data = {"pipeline": pipeline, "status": "created"}
+        self.pipeline_data.update({"pipeline": pipeline, "status": "created"})
 
         # Get filters
         filters = None
@@ -69,7 +76,7 @@ class E2ETestCase(unittest.TestCase):
 
         # Perform execution
         # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
-        predict_item = self.dataset.items.get(item_id="667845daa79152c0e157787d")
+        predict_item = self.dataset.items.get(item_id="66783633b5d4e8bd5714d3e0")
         predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
         pipeline.install()
         pipeline_execution = pipeline.execute(
@@ -82,7 +89,7 @@ class E2ETestCase(unittest.TestCase):
             ]
         )
         status = utils.pipeline_execution_wait(pipeline_execution=pipeline_execution)
-        self.pipeline_data["status"] = status
+        self.pipeline_data.update({"status": status})
         self.assertEqual(status, dl.ExecutionStatus.SUCCESS.value)
 
 
