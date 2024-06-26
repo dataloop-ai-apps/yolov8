@@ -3,9 +3,24 @@ import configparser
 import json
 import time
 import uuid
+import os
+
+
+def create_dataset_with_tags(project: dl.Project, dpk_name: str, dataset_folder: str) -> dl.Dataset:
+    identifier = str(uuid.uuid4())[:8]
+    dataset_name = f"{dpk_name}-{identifier}"  # TODO: append git sha
+
+    # Create dataset
+    dataset: dl.Dataset = project.datasets.create(dataset_name=dataset_name)
+    items_path = os.path.join(dataset_folder, 'items')
+    annotations_path = os.path.join(dataset_folder, 'json')
+    dataset.items.upload(local_path=items_path, local_annotations_path=annotations_path)
+
+    return dataset
 
 
 def publish_dpk_and_install_app(project: dl.Project, dpk_name: str) -> (dl.Dpk, dl.App):
+    # Find dpk json
     dataloop_cfg_filepath = '.dataloop.cfg'
     config = configparser.ConfigParser()
     config.read(dataloop_cfg_filepath)
@@ -19,15 +34,18 @@ def publish_dpk_and_install_app(project: dl.Project, dpk_name: str) -> (dl.Dpk, 
             break
         dpk_json = None
 
+    # Throw error if dpk not found
     if dpk_json is None:
         raise ValueError(f"Could not find dpk with name {dpk_name} in {dataloop_cfg_filepath}")
 
+    # Update the dpk
     identifier = str(uuid.uuid4())[:8]
     dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=project)
     dpk.name = f"{dpk.name}-{identifier}"  # TODO: append git sha
     dpk.display_name = dpk.name
     dpk.codebase = None
 
+    # Publish dpk and install app
     dpk = project.dpks.publish(dpk=dpk)
     app = project.apps.install(dpk=dpk)
     return dpk, app

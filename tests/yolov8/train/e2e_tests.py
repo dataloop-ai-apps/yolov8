@@ -1,7 +1,6 @@
 import unittest
 import dtlpy as dl
 import os
-import json
 
 # TODO: change when will become a part of the SDK
 import sys
