@@ -59,7 +59,7 @@ class E2ETestCase(unittest.TestCase):
     # Test functions
     def test_yolov8_evaluate(self):
         # Create pipeline
-        pipeline_template_filepath = os.path.join(self.test_folder, 'pipeline_template.json')
+        pipeline_template_filepath = os.path.join(self.test_folder, 'template.json')
         pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
 
         # Get filters
