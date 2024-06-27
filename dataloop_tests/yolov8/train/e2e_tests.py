@@ -77,7 +77,6 @@ class E2ETestCase(unittest.TestCase):
         if valid_filters is None:
             raise ValueError("Filters for validation set not found in pipeline variables")
 
-        # TODO: Update model with filters and dataset
         # Update model metadata
         self.model.dataset_id = self.dataset.id
         self.model.add_subset(subset_name="train", subset_filter=train_filters)
