@@ -34,10 +34,8 @@
             },
             {
               "metadata": {
-                "system": {
-                  "tags": {
-                    "predict": true
-                  }
+                "tags": {
+                  "predict": true
                 }
               }
             },
@@ -153,7 +151,7 @@
       "projectId": null,
       "config": {
         "package": {
-          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n    def run(self, dataset: dl.Dataset, context: dl.Context):\n        pipeline = context.pipeline\n\n        filters = None\n        variable: dl.Variable\n        for variable in pipeline.variables:\n            if variable.name == \"predict_filters\":\n                filters = dl.Filters(custom_filter=variable.value)\n        if filters is None:\n            raise ValueError(\"Filters for predict not found in pipeline variables\")\n        pipeline.update()\n\n        predict_item = dataset.items.get(item_id=\"66783633b5d4e8bd5714d3e0\")\n        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))\n\n        return predict_item\n",
+          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n    def run(self, dataset: dl.Dataset, context: dl.Context):\n        pipeline = context.pipeline\n\n        filters = None\n        variable: dl.Variable\n        for variable in pipeline.variables:\n            if variable.name == \"predict_filters\":\n                filters = dl.Filters(custom_filter=variable.value)\n        if filters is None:\n            raise ValueError(\"Filters for predict not found in pipeline variables\")\n\n        predict_item = list(dataset.items.list(filters=filters).all())[0]\n        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))\n\n        return predict_item\n",
           "name": "run",
           "type": "code",
           "codebase": {

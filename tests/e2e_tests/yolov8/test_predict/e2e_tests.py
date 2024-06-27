@@ -64,32 +64,8 @@ class E2ETestCase(unittest.TestCase):
         pipeline = self.utils.update_pipeline_variable(pipeline=pipeline, variable_name="dataset", variable_value=self.dataset.id)
         pipeline = self.utils.update_pipeline_variable(pipeline=pipeline, variable_name="model", variable_value=self.model.id)
 
-        # # Get filters
-        # filters = None
-        # variable: dl.Variable
-        # for variable in pipeline.variables:
-        #     if variable.name == "predict_filters":
-        #         filters = dl.Filters(custom_filter=variable.value)
-        #     if variable.name == "model":
-        #         variable.value = self.model.id
-        # if filters is None:
-        #     raise ValueError("Filters for predict not found in pipeline variables")
-        # pipeline.update()
-
         # Perform execution
-        # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
-        # predict_item = self.dataset.items.get(item_id="66783633b5d4e8bd5714d3e0")
-        # predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
         pipeline.install()
-        # self.pipeline_execution = pipeline.execute(
-        #     execution_input=[
-        #         dl.FunctionIO(
-        #             type=dl.PackageInputType.ITEM,
-        #             value=predict_item.id,
-        #             name="item"
-        #         )
-        #     ]
-        # )
         self.pipeline_execution = pipeline.execute(execution_input=None)
 
         # TODO: Waiting for DAT-73101
