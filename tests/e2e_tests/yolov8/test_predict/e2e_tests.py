@@ -2,8 +2,6 @@ import unittest
 import dtlpy as dl
 import os
 
-print(os.getcwd())
-
 # TODO: change when will become a part of the SDK
 from test_utils import TestsUtils
 
