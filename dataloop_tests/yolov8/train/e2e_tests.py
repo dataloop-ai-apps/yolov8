@@ -20,9 +20,9 @@ class E2ETestCase(unittest.TestCase):
     installed_models: list = None
     model: dl.Model = None
     utils: TestsUtils = None
+    pipeline_execution: dl.PipelineExecution = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
     model_tests_folder: str = os.path.join(test_folder, '..')
-    pipeline_data: dict = dict()
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -47,8 +47,8 @@ class E2ETestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         # Delete the pipeline if passed
-        if cls.pipeline_data is not None and cls.pipeline_data["status"] == dl.ExecutionStatus.SUCCESS.value:
-            cls.pipeline_data["pipeline"].delete()
+        if cls.pipeline_execution is not None and cls.pipeline_execution.status == dl.ExecutionStatus.SUCCESS.value:
+            cls.pipeline_execution.pipeline.delete()
             for model in cls.installed_models:
                 model.delete()
             cls.app.uninstall()
@@ -61,7 +61,6 @@ class E2ETestCase(unittest.TestCase):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'pipeline_template.json')
         pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
-        self.pipeline_data.update({"pipeline": pipeline, "status": "created"})
 
         # Get filters
         train_filters = None
@@ -85,7 +84,7 @@ class E2ETestCase(unittest.TestCase):
 
         # Perform execution
         pipeline.install()
-        pipeline_execution = pipeline.execute(
+        self.pipeline_execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
                     type=dl.PackageInputType.MODEL,
@@ -94,8 +93,10 @@ class E2ETestCase(unittest.TestCase):
                 )
             ]
         )
-        status = self.utils.pipeline_execution_wait(pipeline_execution=pipeline_execution)
-        self.pipeline_data.update({"status": status})
+        # TODO: Waiting for DAT-73101
+        # self.pipeline_execution = self.pipeline_execution.wait()
+        # status = self.pipeline_execution.status
+        status = self.utils.pipeline_execution_wait(pipeline_execution=self.pipeline_execution)
         self.assertEqual(status, dl.ExecutionStatus.SUCCESS.value)
 
 
