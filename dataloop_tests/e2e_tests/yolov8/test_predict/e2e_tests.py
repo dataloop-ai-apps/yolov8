@@ -22,7 +22,7 @@ class E2ETestCase(unittest.TestCase):
     utils: TestsUtils = None
     pipeline_execution: dl.PipelineExecution = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
-    model_tests_folder: str = os.path.join(test_folder, '..')
+    assets_folder: str = os.path.join('dataloop_tests', 'assets', 'e2e_tests')
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -32,7 +32,7 @@ class E2ETestCase(unittest.TestCase):
         cls.project = dl.projects.get(project_id=PROJECT_ID)
         cls.utils = TestsUtils(project=cls.project)
 
-        dataset_folder = os.path.join(cls.model_tests_folder, 'dataset')
+        dataset_folder = os.path.join(cls.assets_folder, 'dataset')
         cls.dataset = cls.utils.create_dataset_with_tags(
             dpk_name=DPK_NAME,
             dataset_folder=dataset_folder
@@ -57,7 +57,7 @@ class E2ETestCase(unittest.TestCase):
         dl.logout()
 
     # Test functions
-    def test_yolov8_evaluate(self):
+    def test_yolov8_predict(self):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'pipeline_template.json')
         pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
@@ -66,29 +66,25 @@ class E2ETestCase(unittest.TestCase):
         filters = None
         variable: dl.Variable
         for variable in pipeline.variables:
-            if variable.name == "test_filters":
+            if variable.name == "predict_filters":
                 filters = dl.Filters(custom_filter=variable.value)
+            if variable.name == "model":
+                variable.value = self.model.id
         if filters is None:
-            raise ValueError("Filters for evaluate not found in pipeline variables")
+            raise ValueError("Filters for predict not found in pipeline variables")
+        pipeline.update()
 
         # Perform execution
+        # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
+        predict_item = self.dataset.items.get(item_id="66783633b5d4e8bd5714d3e0")
+        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
         pipeline.install()
         self.pipeline_execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
-                    type=dl.PackageInputType.MODEL,
-                    value=self.model.id,
-                    name="model"
-                ),
-                dl.FunctionIO(
-                    type=dl.PackageInputType.DATASET,
-                    value=self.dataset.id,
-                    name="dataset"
-                ),
-                dl.FunctionIO(
-                    type=dl.PackageInputType.JSON,
-                    value=filters.prepare(),
-                    name="filters"
+                    type=dl.PackageInputType.ITEM,
+                    value=predict_item.id,
+                    name="item"
                 )
             ]
         )

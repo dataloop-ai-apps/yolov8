@@ -22,7 +22,7 @@ class E2ETestCase(unittest.TestCase):
     utils: TestsUtils = None
     pipeline_execution: dl.PipelineExecution = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
-    model_tests_folder: str = os.path.join(test_folder, '..')
+    assets_folder: str = os.path.join('dataloop_tests', 'assets', 'e2e_tests')
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -32,7 +32,7 @@ class E2ETestCase(unittest.TestCase):
         cls.project = dl.projects.get(project_id=PROJECT_ID)
         cls.utils = TestsUtils(project=cls.project)
 
-        dataset_folder = os.path.join(cls.model_tests_folder, 'dataset')
+        dataset_folder = os.path.join(cls.assets_folder, 'dataset')
         cls.dataset = cls.utils.create_dataset_with_tags(
             dpk_name=DPK_NAME,
             dataset_folder=dataset_folder
@@ -57,34 +57,39 @@ class E2ETestCase(unittest.TestCase):
         dl.logout()
 
     # Test functions
-    def test_yolov8_predict(self):
+    def test_yolov8_train(self):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'pipeline_template.json')
         pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
 
         # Get filters
-        filters = None
+        train_filters = None
+        valid_filters = None
         variable: dl.Variable
         for variable in pipeline.variables:
-            if variable.name == "predict_filters":
-                filters = dl.Filters(custom_filter=variable.value)
-            if variable.name == "model":
-                variable.value = self.model.id
-        if filters is None:
-            raise ValueError("Filters for predict not found in pipeline variables")
-        pipeline.update()
+            if variable.name == "train_filters":
+                train_filters = dl.Filters(custom_filter=variable.value)
+            elif variable.name == "validation_filters":
+                valid_filters = dl.Filters(custom_filter=variable.value)
+        if train_filters is None:
+            raise ValueError("Filters for train set not found in pipeline variables")
+        if valid_filters is None:
+            raise ValueError("Filters for validation set not found in pipeline variables")
+
+        # Update model metadata
+        self.model.dataset_id = self.dataset.id
+        self.model.add_subset(subset_name="train", subset_filter=train_filters)
+        self.model.add_subset(subset_name="validation", subset_filter=train_filters)
+        self.model.update(system_metadata=True)
 
         # Perform execution
-        # predict_item = self.dataset.items.list(filters=filters).all()[0]  # TODO: check why not working
-        predict_item = self.dataset.items.get(item_id="66783633b5d4e8bd5714d3e0")
-        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))
         pipeline.install()
         self.pipeline_execution = pipeline.execute(
             execution_input=[
                 dl.FunctionIO(
-                    type=dl.PackageInputType.ITEM,
-                    value=predict_item.id,
-                    name="item"
+                    type=dl.PackageInputType.MODEL,
+                    value=self.model.id,
+                    name="model"
                 )
             ]
         )
