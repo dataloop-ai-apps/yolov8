@@ -86,7 +86,7 @@ class TestsUtils:
             models = list(models.all())
         return models
 
-    def create_pipeline(self, pipeline_template_filepath: str) -> dl.Pipeline:
+    def create_pipeline(self, pipeline_template_filepath: str, install: bool = True) -> dl.Pipeline:
         # Open pipeline template
         with open(pipeline_template_filepath, 'r') as f:
             pipeline_json = json.load(f)
@@ -98,7 +98,20 @@ class TestsUtils:
         pipeline_json["projectId"] = self.project.id
         pipeline = self.project.pipelines.create(pipeline_json=pipeline_json)
 
+        if install:
+            pipeline = pipeline.install()
+
         # TODO: identifier in order to delete test pipelines
+        return pipeline
+
+    @staticmethod
+    def update_pipeline_variable(pipeline: dl.Pipeline, variable_name: str, variable_value: str):
+        variable: dl.Variable
+        for variable in pipeline.variables:
+            if variable.name == variable_name:
+                variable.value = variable_value
+                break
+        pipeline = pipeline.update()
         return pipeline
 
     @staticmethod
