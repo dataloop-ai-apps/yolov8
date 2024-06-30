@@ -9,6 +9,7 @@ BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
 ENV = os.environ['ENV']
+COMMIT_ID = os.environ['COMMIT_ID']
 DPK_NAME = "yolov8"
 
 
@@ -30,7 +31,7 @@ class E2ETestCase(unittest.TestCase):
         if dl.token_expired():
             dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         cls.project = dl.projects.get(project_id=PROJECT_ID)
-        cls.utils = TestsUtils(project=cls.project)
+        cls.utils = TestsUtils(project=cls.project, commit_id=COMMIT_ID)
 
         dataset_folder = os.path.join(cls.assets_folder, 'dataset')
         cls.dataset = cls.utils.create_dataset_with_tags(
@@ -71,9 +72,9 @@ class E2ETestCase(unittest.TestCase):
 
         # TODO: Waiting for DAT-73101
         # self.pipeline_execution = self.pipeline_execution.wait()
-        # status = self.pipeline_execution.status
-        status = self.utils.pipeline_execution_wait(pipeline_execution=self.pipeline_execution)
-        self.assertEqual(status, dl.ExecutionStatus.SUCCESS.value)
+
+        self.pipeline_execution = self.utils.pipeline_execution_wait(pipeline_execution=self.pipeline_execution)
+        self.assertEqual(self.pipeline_execution.status, dl.ExecutionStatus.SUCCESS.value)
 
 
 if __name__ == '__main__':

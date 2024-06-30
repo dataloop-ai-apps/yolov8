@@ -11,10 +11,10 @@ class TestsUtils:
         self.project = project
         self.commit_id = commit_id
         self.identifier = str(uuid.uuid4())[:8]
-        self.tag = f"{self.commit_id} {self.identifier}"
+        self.tag = f"{self.commit_id}-{self.identifier}"
 
     def create_dataset_with_tags(self, dataset_name: str, dataset_folder: str, upload_annotations: bool) -> dl.Dataset:
-        new_dataset_name = f"{dataset_name} {self.tag}"
+        new_dataset_name = f"{dataset_name}-{self.tag}"
 
         # Create dataset
         dataset: dl.Dataset = self.project.datasets.create(dataset_name=new_dataset_name)
@@ -60,7 +60,7 @@ class TestsUtils:
         return dataset
 
     def publish_dpk_and_install_app(self, dpk_name: str) -> (dl.Dpk, dl.App):
-        new_dpk_name = f"{dpk_name} {self.tag}"
+        new_dpk_name = f"{dpk_name}-{self.tag}"
 
         # Find dpk json
         dataloop_cfg_filepath = '.dataloop.cfg'
@@ -124,7 +124,7 @@ class TestsUtils:
         else:
             raise ValueError("Either pipeline_template_filepath or pipeline_template_dpk must be provided")
 
-        new_pipeline_name = f'{pipeline_json["name"]} {self.tag}'[:35]
+        new_pipeline_name = f'{pipeline_json["name"]}-{self.tag}'[:35]
 
         # Update pipeline template
         pipeline_json["name"] = new_pipeline_name
