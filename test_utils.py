@@ -105,12 +105,12 @@ class TestsUtils:
         return pipeline
 
     @staticmethod
-    def update_pipeline_variable(pipeline: dl.Pipeline, variable_name: str, variable_value: str):
+    def update_pipeline_variable(pipeline: dl.Pipeline, variables_dict: dict) -> dl.Pipeline:
+        variable_keys = list(variables_dict.keys())
         variable: dl.Variable
         for variable in pipeline.variables:
-            if variable.name == variable_name:
-                variable.value = variable_value
-                break
+            if variable.name in variable_keys:
+                variable.value = variables_dict[variable.name]
         pipeline = pipeline.update()
         return pipeline
 

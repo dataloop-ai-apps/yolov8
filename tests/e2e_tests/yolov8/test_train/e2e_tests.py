@@ -39,10 +39,7 @@ class E2ETestCase(unittest.TestCase):
         )
         cls.dpk, cls.app = cls.utils.publish_dpk_and_install_app(dpk_name=DPK_NAME)
         cls.installed_models = cls.utils.get_installed_app_model(app=cls.app)
-        for model in cls.installed_models:
-            if "yolov8" in model.name and "large" not in model.name:
-                cls.model = model
-                break
+        cls.model = cls.installed_models[0]
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -60,7 +57,9 @@ class E2ETestCase(unittest.TestCase):
     def test_yolov8_train(self):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'template.json')
-        pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
+        pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath, install=False)
+        variables_dict = {"model": self.model.id}
+        pipeline = self.utils.update_pipeline_variable(pipeline=pipeline, variables_dict=variables_dict)
 
         # Get filters
         train_filters = None
