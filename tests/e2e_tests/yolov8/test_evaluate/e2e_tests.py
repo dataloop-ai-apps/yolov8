@@ -34,11 +34,12 @@ class E2ETestCase(unittest.TestCase):
 
         dataset_folder = os.path.join(cls.assets_folder, 'dataset')
         cls.dataset = cls.utils.create_dataset_with_tags(
-            dpk_name=DPK_NAME,
-            dataset_folder=dataset_folder
+            dataset_name=DPK_NAME,
+            dataset_folder=dataset_folder,
+            upload_annotations=True
         )
         cls.dpk, cls.app = cls.utils.publish_dpk_and_install_app(dpk_name=DPK_NAME)
-        cls.installed_models = cls.utils.get_installed_app_model(app=cls.app)
+        cls.installed_models = cls.utils.get_installed_app_models(app=cls.app)
         cls.model = cls.installed_models[0]
 
     @classmethod

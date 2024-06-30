@@ -11,14 +11,24 @@ class TestsUtils:
         self.identifier = str(uuid.uuid4())[:8]
         self.project = project
 
-    def create_dataset_with_tags(self, dpk_name: str, dataset_folder: str) -> dl.Dataset:
-        dataset_name = f"{dpk_name}-{self.identifier}"  # TODO: append git sha
+    def create_dataset_with_tags(self, dataset_name: str, dataset_folder: str, upload_annotations: bool) -> dl.Dataset:
+        dataset_name = f"{dataset_name}-{self.identifier}"  # TODO: append git sha
 
         # Create dataset
         dataset: dl.Dataset = self.project.datasets.create(dataset_name=dataset_name)
+
+        # Get paths
         items_path = os.path.join(dataset_folder, 'items')
         annotations_path = os.path.join(dataset_folder, 'json')
-        # dataset.items.upload(local_path=items_path, local_annotations_path=annotations_path)
+        if not os.path.exists(items_path):
+            raise ValueError(f"Items folder not found in {items_path}")
+        if upload_annotations and not os.path.exists(annotations_path):
+            raise ValueError(f"Annotations folder not found in {items_path}")
+
+        # Upload items without annotations and without tags
+        if not upload_annotations:
+            dataset.items.upload(local_path=items_path)
+            return dataset
 
         # Upload items with their annotations and tags
         item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_path).rglob('*'))))
@@ -78,7 +88,7 @@ class TestsUtils:
         app = self.project.apps.install(dpk=dpk)
         return dpk, app
 
-    def get_installed_app_model(self, app: dl.App) -> [dl.Model]:
+    def get_installed_app_models(self, app: dl.App) -> [dl.Model]:
         filters = dl.Filters(resource=dl.FiltersResource.MODEL)
         filters.add(field="app.id", values=app.id)
         models = self.project.models.list(filters=filters)
