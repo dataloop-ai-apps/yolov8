@@ -63,7 +63,7 @@
       "type": "ml",
       "namespace": {
         "functionName": "train",
-        "projectName": "ofir_huggingface",
+        "projectName": null,
         "serviceName": "model-mgmt-app-train",
         "moduleName": "yolov8-module",
         "packageName": "model-mgmt-app"
@@ -71,8 +71,8 @@
       "projectId": null,
       "metadata": {
         "position": {
-          "x": 9968.953125,
-          "y": 10029,
+          "x": 10000.0,
+          "y": 10000.0,
           "z": 0
         },
         "repeatable": true
@@ -110,11 +110,11 @@
           "io": "output"
         }
       ],
-      "name": "code",
+      "name": "preprocess",
       "type": "code",
       "namespace": {
         "functionName": "run",
-        "projectName": "ofir_huggingface",
+        "projectName": null,
         "serviceName": "",
         "moduleName": null,
         "packageName": ""
@@ -122,7 +122,7 @@
       "projectId": null,
       "config": {
         "package": {
-          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n\n    @staticmethod\n    def run(dataset: dl.Dataset, model: dl.Model, context: dl.Context):\n        # Get filters\n        train_filters = dl.Filters()\n        train_filters.add(field=\"metadata.system.tags.train\", values=True)\n        validation_filters = dl.Filters()\n        validation_filters.add(field=\"metadata.system.tags.validation\", values=True)\n\n        # Update model metadata\n        model.dataset_id = dataset.id\n        model.add_subset(subset_name=\"train\", subset_filter=train_filters)\n        model.add_subset(subset_name=\"validation\", subset_filter=validation_filters)\n        model.update(system_metadata=True)\n\n        return model\n",
+          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n\n    @staticmethod\n    def run(dataset: dl.Dataset, model: dl.Model):\n        # Get filters\n        train_filters = dl.Filters()\n        train_filters.add(field=\"metadata.system.tags.train\", values=True)\n        validation_filters = dl.Filters()\n        validation_filters.add(field=\"metadata.system.tags.validation\", values=True)\n\n        # Update model metadata\n        model.dataset_id = dataset.id\n        model.add_subset(subset_name=\"train\", subset_filter=train_filters)\n        model.add_subset(subset_name=\"validation\", subset_filter=validation_filters)\n        model.update(system_metadata=True)\n\n        return model\n",
           "name": "run",
           "type": "code",
           "codebase": {
@@ -132,8 +132,8 @@
       },
       "metadata": {
         "position": {
-          "x": 9623.3046875,
-          "y": 10029.5,
+          "x": 9500.0,
+          "y": 10000.0,
           "z": 0
         },
         "repeatable": true

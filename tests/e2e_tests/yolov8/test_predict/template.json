@@ -23,41 +23,14 @@
   ],
   "variables": [
     {
-      "name": "predict_filters",
-      "type": "Json",
-      "description": "Predict Items Filters",
-      "value": {
-        "filter": {
-          "$and": [
-            {
-              "hidden": false
-            },
-            {
-              "metadata": {
-                "tags": {
-                  "predict": true
-                }
-              }
-            },
-            {
-              "type": "file"
-            }
-          ]
-        },
-        "page": 0,
-        "pageSize": 1000,
-        "resource": "items"
-      }
+      "name": "model",
+      "type": "Model",
+      "description": null
     },
     {
       "name": "dataset",
       "type": "Dataset",
-      "description": "Input Dataset"
-    },
-    {
-      "name": "model",
-      "type": "Model",
-      "description": "Tested Model"
+      "description": null
     }
   ],
   "description": "",
@@ -151,7 +124,7 @@
       "projectId": null,
       "config": {
         "package": {
-          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n    def run(self, dataset: dl.Dataset, context: dl.Context):\n        pipeline = context.pipeline\n\n        filters = None\n        variable: dl.Variable\n        for variable in pipeline.variables:\n            if variable.name == \"predict_filters\":\n                filters = dl.Filters(custom_filter=variable.value)\n        if filters is None:\n            raise ValueError(\"Filters for predict not found in pipeline variables\")\n\n        predict_item = list(dataset.items.list(filters=filters).all())[0]\n        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))\n\n        return predict_item\n",
+          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n    @staticmethod\n    def run(dataset: dl.Dataset):\n        # Define filters\n        filters = dl.Filters()\n        filters.add(field=\"metadata.tags.predict\", values=True)\n\n        # Get predict item\n        predict_item = list(dataset.items.list(filters=filters).all())[0]\n        predict_item.annotations.delete(filters=dl.Filters(resource=dl.FiltersResource.ANNOTATION))\n\n        return predict_item\n",
           "name": "run",
           "type": "code",
           "codebase": {
@@ -169,6 +142,6 @@
       }
     }
   ],
-  "preview": "667d8eaca1a7fc846ddfd764",
-  "_id": "667d8f59a1a7fc3ee8dfda8e"
+  "preview": "66852d8111504c8efe38f927",
+  "_id": "66852deb11504cee2638fa95"
 }
