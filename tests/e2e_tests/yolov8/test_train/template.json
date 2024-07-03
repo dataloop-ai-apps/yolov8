@@ -2,73 +2,35 @@
   "projectId": null,
   "orgId": null,
   "connections": [
-
+    {
+      "src": {
+        "nodeId": "4e9a6f7e-49d4-4002-ab09-cead90f7bd5c",
+        "portId": "ab7dc654-a3be-4577-86c6-38ae54cd9fed"
+      },
+      "tgt": {
+        "nodeId": "3b1e7c38-97e8-4b60-8df2-8bc76c062dbb",
+        "portId": "50df9552-a793-45e7-9410-534135e97dd7"
+      },
+      "condition": "{}"
+    }
   ],
   "startNodes": [
     {
-      "nodeId": "31a4c26b-91f5-4cee-bc9e-17f5f7d6bbdb",
+      "nodeId": "4e9a6f7e-49d4-4002-ab09-cead90f7bd5c",
       "type": "root",
-      "id": "8f6d4248-a7bb-4f5a-b203-8cfa0af42591"
+      "id": "34cc2c98-83df-4fe4-9aa8-b738dd22eeef"
     }
   ],
   "variables": [
     {
-      "name": "train_filters",
-      "type": "Json",
-      "description": "Train Items Filters",
-      "value": {
-        "filter": {
-          "$and": [
-            {
-              "hidden": false
-            },
-            {
-              "metadata": {
-                "system": {
-                  "tags": {
-                    "train": true
-                  }
-                }
-              }
-            },
-            {
-              "type": "file"
-            }
-          ]
-        },
-        "page": 0,
-        "pageSize": 1000,
-        "resource": "items"
-      }
+      "name": "dataset",
+      "type": "Dataset",
+      "description": null
     },
     {
-      "name": "validation_filters",
-      "type": "Json",
-      "description": "Validation Items Filters",
-      "value": {
-        "filter": {
-          "$and": [
-            {
-              "hidden": false
-            },
-            {
-              "metadata": {
-                "system": {
-                  "tags": {
-                    "validation": true
-                  }
-                }
-              }
-            },
-            {
-              "type": "file"
-            }
-          ]
-        },
-        "page": 0,
-        "pageSize": 1000,
-        "resource": "items"
-      }
+      "name": "model",
+      "type": "Model",
+      "description": null
     }
   ],
   "description": "",
@@ -76,11 +38,11 @@
   "templateKind": "org",
   "nodes": [
     {
-      "id": "31a4c26b-91f5-4cee-bc9e-17f5f7d6bbdb",
+      "id": "3b1e7c38-97e8-4b60-8df2-8bc76c062dbb",
       "inputs": [
         {
-          "portId": "4ae08564-a5b2-4c67-8762-f5419a03167d",
-          "nodeId": "4ae08564-a5b2-4c67-8762-f5419a03167d",
+          "portId": "50df9552-a793-45e7-9410-534135e97dd7",
+          "nodeId": "50df9552-a793-45e7-9410-534135e97dd7",
           "type": "Model",
           "name": "model",
           "displayName": "model",
@@ -89,8 +51,8 @@
       ],
       "outputs": [
         {
-          "portId": "1b43ec86-262b-4b45-b18f-36aba3cf513f",
-          "nodeId": "1b43ec86-262b-4b45-b18f-36aba3cf513f",
+          "portId": "a598243d-7697-44ed-b2ea-c153a9528cb9",
+          "nodeId": "a598243d-7697-44ed-b2ea-c153a9528cb9",
           "type": "Model",
           "name": "model",
           "displayName": "model",
@@ -101,7 +63,7 @@
       "type": "ml",
       "namespace": {
         "functionName": "train",
-        "projectName": null,
+        "projectName": "ofir_huggingface",
         "serviceName": "model-mgmt-app-train",
         "moduleName": "yolov8-module",
         "packageName": "model-mgmt-app"
@@ -109,14 +71,75 @@
       "projectId": null,
       "metadata": {
         "position": {
-          "x": 10000.0,
-          "y": 10000.0,
+          "x": 9968.953125,
+          "y": 10029,
+          "z": 0
+        },
+        "repeatable": true
+      }
+    },
+    {
+      "id": "4e9a6f7e-49d4-4002-ab09-cead90f7bd5c",
+      "inputs": [
+        {
+          "portId": "d85786b2-dcf6-4a6f-922e-bf6e4b2dadee",
+          "nodeId": "d85786b2-dcf6-4a6f-922e-bf6e4b2dadee",
+          "type": "Dataset",
+          "name": "dataset",
+          "displayName": "dataset",
+          "variableName": "dataset",
+          "io": "input"
+        },
+        {
+          "portId": "c3a1215d-184f-4661-9519-61a948dad4d1",
+          "nodeId": "c3a1215d-184f-4661-9519-61a948dad4d1",
+          "type": "Model",
+          "name": "model",
+          "displayName": "model",
+          "variableName": "model",
+          "io": "input"
+        }
+      ],
+      "outputs": [
+        {
+          "portId": "ab7dc654-a3be-4577-86c6-38ae54cd9fed",
+          "nodeId": "ab7dc654-a3be-4577-86c6-38ae54cd9fed",
+          "type": "Model",
+          "name": "model",
+          "displayName": "model",
+          "io": "output"
+        }
+      ],
+      "name": "code",
+      "type": "code",
+      "namespace": {
+        "functionName": "run",
+        "projectName": "ofir_huggingface",
+        "serviceName": "",
+        "moduleName": null,
+        "packageName": ""
+      },
+      "projectId": null,
+      "config": {
+        "package": {
+          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n\n    @staticmethod\n    def run(dataset: dl.Dataset, model: dl.Model, context: dl.Context):\n        # Get filters\n        train_filters = dl.Filters()\n        train_filters.add(field=\"metadata.system.tags.train\", values=True)\n        validation_filters = dl.Filters()\n        validation_filters.add(field=\"metadata.system.tags.validation\", values=True)\n\n        # Update model metadata\n        model.dataset_id = dataset.id\n        model.add_subset(subset_name=\"train\", subset_filter=train_filters)\n        model.add_subset(subset_name=\"validation\", subset_filter=validation_filters)\n        model.update(system_metadata=True)\n\n        return model\n",
+          "name": "run",
+          "type": "code",
+          "codebase": {
+            "type": "item"
+          }
+        }
+      },
+      "metadata": {
+        "position": {
+          "x": 9623.3046875,
+          "y": 10029.5,
           "z": 0
         },
         "repeatable": true
       }
     }
   ],
-  "preview": "6673e7dc70272364b30d3717",
-  "_id": null
+  "preview": "66852a651039006896e8a5e3",
+  "_id": "66852a93103900692ce8a67e"
 }

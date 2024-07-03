@@ -59,40 +59,16 @@ class E2ETestCase(unittest.TestCase):
         # Create pipeline
         pipeline_template_filepath = os.path.join(self.test_folder, 'template.json')
         pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath, install=False)
-        variables_dict = {"model": self.model.id}
+        variables_dict = {
+            "dataset": self.dataset.id,
+            "model": self.model.id
+        }
         pipeline = self.utils.update_pipeline_variable(pipeline=pipeline, variables_dict=variables_dict)
-
-        # Get filters
-        train_filters = None
-        valid_filters = None
-        variable: dl.Variable
-        for variable in pipeline.variables:
-            if variable.name == "train_filters":
-                train_filters = dl.Filters(custom_filter=variable.value)
-            elif variable.name == "validation_filters":
-                valid_filters = dl.Filters(custom_filter=variable.value)
-        if train_filters is None:
-            raise ValueError("Filters for train set not found in pipeline variables")
-        if valid_filters is None:
-            raise ValueError("Filters for validation set not found in pipeline variables")
-
-        # Update model metadata
-        self.model.dataset_id = self.dataset.id
-        self.model.add_subset(subset_name="train", subset_filter=train_filters)
-        self.model.add_subset(subset_name="validation", subset_filter=train_filters)
-        self.model.update(system_metadata=True)
 
         # Perform execution
         pipeline.install()
-        self.pipeline_execution = pipeline.execute(
-            execution_input=[
-                dl.FunctionIO(
-                    type=dl.PackageInputType.MODEL,
-                    value=self.model.id,
-                    name="model"
-                )
-            ]
-        )
+        self.pipeline_execution = pipeline.execute(execution_input=None)
+
         # TODO: Waiting for DAT-73101
         # self.pipeline_execution = self.pipeline_execution.wait()
 
