@@ -3,7 +3,7 @@ import dtlpy as dl
 import os
 
 # TODO: change when will become a part of the SDK
-from test_utils import TestsUtils
+from tests.test_utils import TestsUtils
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
@@ -34,13 +34,12 @@ class E2ETestCase(unittest.TestCase):
         cls.utils = TestsUtils(project=cls.project, commit_id=COMMIT_ID)
 
         dataset_folder = os.path.join(cls.assets_folder, 'dataset')
-        cls.dataset = cls.utils.create_dataset_with_tags(
+        cls.dataset = cls.utils.create_dataset(
             dataset_name=DPK_NAME,
-            dataset_folder=dataset_folder,
-            upload_annotations=True
+            dataset_folder=dataset_folder
         )
         cls.dpk, cls.app = cls.utils.publish_dpk_and_install_app(dpk_name=DPK_NAME)
-        cls.installed_models = cls.utils.get_installed_app_models(app=cls.app)
+        cls.installed_models = cls.utils.get_models(app=cls.app)
         cls.model = cls.installed_models[0]
 
     @classmethod
