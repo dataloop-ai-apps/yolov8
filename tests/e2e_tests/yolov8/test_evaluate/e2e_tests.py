@@ -3,7 +3,7 @@ import dtlpy as dl
 import os
 
 # TODO: change when will become a part of the SDK
-from tests.test_utils import TestsUtils
+from tests.test_utils import TestUtils
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
@@ -20,7 +20,7 @@ class E2ETestCase(unittest.TestCase):
     app: dl.App = None
     installed_models: list = None
     model: dl.Model = None
-    utils: TestsUtils = None
+    utils: TestUtils = None
     pipeline_execution: dl.PipelineExecution = None
     test_folder: str = os.path.dirname(os.path.abspath(__file__))
     assets_folder: str = os.path.join('dataloop_tests', 'assets', 'e2e_tests')
@@ -31,13 +31,9 @@ class E2ETestCase(unittest.TestCase):
         if dl.token_expired():
             dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         cls.project = dl.projects.get(project_id=PROJECT_ID)
-        cls.utils = TestsUtils(project=cls.project, commit_id=COMMIT_ID)
+        cls.utils = TestUtils(project=cls.project, commit_id=COMMIT_ID, root_path="./", test_path=cls.test_folder)
 
-        dataset_folder = os.path.join(cls.assets_folder, 'dataset')
-        cls.dataset = cls.utils.create_dataset(
-            dataset_name=DPK_NAME,
-            dataset_folder=dataset_folder
-        )
+        cls.dataset = cls.utils.create_dataset(dataset_name='dataset')
         cls.dpk, cls.app = cls.utils.publish_dpk_and_install_app(dpk_name=DPK_NAME)
         cls.installed_models = cls.utils.get_models(app=cls.app)
         cls.model = cls.installed_models[0]
@@ -57,8 +53,7 @@ class E2ETestCase(unittest.TestCase):
     # Test functions
     def test_yolov8_evaluate(self):
         # Create pipeline
-        pipeline_template_filepath = os.path.join(self.test_folder, 'template.json')
-        pipeline = self.utils.create_pipeline(pipeline_template_filepath=pipeline_template_filepath)
+        pipeline = self.utils.create_test_pipeline(install_pipeline=False)
 
         # Get filters
         filters = None

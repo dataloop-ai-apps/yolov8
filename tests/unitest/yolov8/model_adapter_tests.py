@@ -19,7 +19,7 @@ class ItemTypes(enum.Enum):
 class MyTestCase(unittest.TestCase):
     project: dl.Project = None
     dataset: dl.Dataset = None
-    assets_folder: str = os.path.join('dataloop_tests', 'assets', 'unittest')
+    assets_folder: str = os.path.join('dataloop_tests', 'assets', 'datasets', 'unittest')
     prepare_item_function = dict()
 
     @classmethod

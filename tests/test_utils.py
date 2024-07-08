@@ -4,16 +4,47 @@ import time
 import uuid
 import os
 import pathlib
+import argparse
+import yaml  # Required Installation
 
 
-class TestsUtils:
-    def __init__(self, project: dl.Project, commit_id: str):
+BOT_EMAIL = os.environ['BOT_EMAIL']
+BOT_PWD = os.environ['BOT_PWD']
+PROJECT_ID = os.environ['PROJECT_ID']
+ENV = os.environ['ENV']
+COMMIT_ID = os.environ['COMMIT_ID']
+
+
+class TestUtils:
+    def __init__(self, project: dl.Project, commit_id: str, root_path: str, test_path: str):
         self.project = project
         self.commit_id = commit_id
         self.identifier = str(uuid.uuid4())[:8]
         self.tag = f"{self.commit_id}-{self.identifier}"
 
-    def create_dataset(self, dataset_name: str, dataset_folder: str) -> dl.Dataset:
+        # Paths
+        self.root_path = root_path
+        self.test_path = test_path
+        self.datasets_path = os.path.join(self.root_path, 'tests', 'assets', 'datasets', 'e2e_tests')
+        self._setup()
+
+    def _setup(self):
+        # Load '.dataloop.cfg'
+        dataloop_cfg_filepath = os.path.join(self.root_path, '.dataloop.cfg')
+        with open(dataloop_cfg_filepath, 'r') as f:
+            self.dataloop_cfg = json.loads(f.read())
+
+        # Load 'config.yaml'
+        config_yaml_filepath = os.path.join(self.test_path, 'config.yaml')
+        with open(config_yaml_filepath, 'r') as f:
+            self.config_yaml = yaml.load(f, Loader=yaml.FullLoader)
+
+        # Load 'template.json'
+        template_json_filepath = os.path.join(self.test_path, 'template.json')
+        with open(template_json_filepath, 'r') as f:
+            self.template_json = json.load(f)
+
+    def create_dataset(self, dataset_name: str) -> dl.Dataset:
         """
         Create a dataset with the given name and folder path.
         If the folder contains an 'ontology' folder, it will be uploaded as the dataset's ontology.
@@ -26,9 +57,9 @@ class TestsUtils:
         dataset: dl.Dataset = self.project.datasets.create(dataset_name=new_dataset_name)
 
         # Get paths
-        ontology_path = os.path.join(dataset_folder, 'ontology')
-        items_path = os.path.join(dataset_folder, 'items')
-        annotations_path = os.path.join(dataset_folder, 'json')
+        ontology_path = os.path.join(self.datasets_path, dataset_name, 'ontology')
+        items_path = os.path.join(self.datasets_path, dataset_name, 'items')
+        annotations_path = os.path.join(self.datasets_path, dataset_name, 'json')
 
         # Check existence of paths
         ontology_exist = os.path.exists(ontology_path)
@@ -81,13 +112,9 @@ class TestsUtils:
         new_dpk_name = f"{dpk_name}-{self.tag}"
 
         # Find dpk json
-        dataloop_cfg_filepath = '.dataloop.cfg'
-        with open(dataloop_cfg_filepath, 'r') as f:
-            content = f.read()
-        dataloop_cfg = json.loads(content)
         dpk_json = None
         dpk_json_filepath = None
-        for manifest in dataloop_cfg.get("manifests", list()):
+        for manifest in self.dataloop_cfg.get("manifests", list()):
             dpk_json_filepath = manifest
             with open(dpk_json_filepath, 'r') as f:
                 dpk_json = json.load(f)
@@ -98,7 +125,7 @@ class TestsUtils:
 
         # Throw error if dpk not found
         if dpk_json is None:
-            raise ValueError(f"Could not find dpk with name {dpk_name} in {dataloop_cfg_filepath}")
+            raise ValueError(f"Could not find dpk with name '{dpk_name}' in '.dataloop.cfg' file")
 
         # Update the dpk
         dpk = dl.Dpk.from_json(_json=dpk_json, client_api=dl.client_api, project=self.project)
@@ -108,8 +135,7 @@ class TestsUtils:
         dpk.codebase = None
 
         # Set directory to dpk directory
-        current_dir = os.getcwd()
-        dpk_dir = os.path.join(current_dir, os.path.dirname(dpk_json_filepath))
+        dpk_dir = os.path.join(self.root_path, os.path.dirname(dpk_json_filepath))
         os.chdir(dpk_dir)
 
         # Publish dpk and install app
@@ -119,7 +145,7 @@ class TestsUtils:
             app = self.project.apps.install(dpk=dpk)
 
         # Return to original directory
-        os.chdir(current_dir)
+        os.chdir(self.root_path)
         return dpk, app
 
     def get_models(self, dpk: dl.Dpk = None, app: dl.App = None) -> [dl.Model]:
@@ -160,20 +186,7 @@ class TestsUtils:
             datasets = list(datasets.all())
         return datasets
 
-    def create_pipeline(self, pipeline_template_filepath: str = None,
-                        pipeline_template_dpk: dl.Dpk = None,
-                        install: bool = True) -> dl.Pipeline:
-        # Get pipeline template
-        if pipeline_template_filepath is not None:
-            # Open pipeline template
-            with open(pipeline_template_filepath, 'r') as f:
-                pipeline_json = json.load(f)
-        elif pipeline_template_dpk is not None:
-            # Get pipeline template from dpk
-            pipeline_json = pipeline_template_dpk.components.pipeline_templates[0]
-        else:
-            raise ValueError("Either pipeline_template_filepath or pipeline_template_dpk must be provided")
-
+    def _create_pipeline_from_json(self, pipeline_json: dict, install_pipeline: bool = True) -> dl.Pipeline:
         new_pipeline_name = f'{pipeline_json["name"]}-{self.tag}'[:35]
 
         # Update pipeline template
@@ -181,11 +194,17 @@ class TestsUtils:
         pipeline_json["projectId"] = self.project.id
         pipeline = self.project.pipelines.create(pipeline_json=pipeline_json)
 
-        if install:
+        if install_pipeline:
             pipeline = pipeline.install()
-
-        # TODO: identifier in order to delete test pipelines
         return pipeline
+
+    def create_pipeline(self, pipeline_template_dpk: dl.Dpk, install_pipeline: bool = True) -> dl.Pipeline:
+        # Get pipeline template from dpk
+        pipeline_json = pipeline_template_dpk.components.pipeline_templates[0]
+        return self._create_pipeline_from_json(pipeline_json=pipeline_json, install_pipeline=install_pipeline)
+
+    def create_test_pipeline(self, install_pipeline: bool = True) -> dl.Pipeline:
+        return self._create_pipeline_from_json(pipeline_json=self.template_json, install_pipeline=install_pipeline)
 
     @staticmethod
     def update_pipeline_variable(pipeline: dl.Pipeline, variables_dict: dict) -> dl.Pipeline:
@@ -205,3 +224,217 @@ class TestsUtils:
             time.sleep(5)
             pipeline_execution = pipeline.pipeline_executions.get(pipeline_execution_id=pipeline_execution.id)
         return pipeline_execution
+
+
+class TestResources:
+    def __init__(self):
+        self.dpks = dict()
+        self.apps = dict()
+        self.datasets = dict()
+        self.models = dict()
+        self.pipelines = dict()
+
+
+class TestRunner:
+    def __init__(self, test_args: argparse.Namespace):
+        # Read args
+        self.root_path = os.path.abspath(test_args.root_path)
+        self.test_path = os.path.abspath(test_args.test_path)
+
+        # Define variables
+        self.dpks_creation_order = list()
+        self.test_resources = TestResources()
+
+        # Setup Test Utils
+        self._init_test_utils()
+
+    def _init_test_utils(self):
+        # Login and get project
+        dl.setenv(ENV)
+        dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
+        self.project = dl.projects.get(project_id=PROJECT_ID)
+        self.commit_id = COMMIT_ID
+        self.test_utils = TestUtils(
+            project=self.project,
+            commit_id=self.commit_id,
+            root_path=self.root_path,
+            test_path=self.test_path
+        )
+
+    @staticmethod
+    def _get_key_value(entity_dict: dict) -> (str, dict):
+        key = list(entity_dict.keys())[0]
+        value = entity_dict[key]
+        return key, value
+
+    def _prepare_dpks_and_apps(self):
+        for dpk_entity in self.test_utils.config_yaml.get("dpks", list()):
+            dpk_name, dpk_info = self._get_key_value(entity_dict=dpk_entity)
+            install_app = dpk_info.get("install_app", None)
+
+            # Validations
+            if not isinstance(install_app, bool):
+                raise ValueError(f"install_app must be a boolean value")
+
+            # Publish dpk and install app
+            dpk, app = self.test_utils.publish_dpk_and_install_app(dpk_name=dpk_name, install_app=install_app)
+            self.test_resources.dpks.update({dpk_name: dpk})
+            if app is not None:
+                self.test_resources.apps.update({dpk_name: app})
+
+            # Add dpk to creation order
+            self.dpks_creation_order.append(dpk_name)
+
+    def _prepare_datasets(self):
+        for dataset_name in self.test_utils.config_yaml.get("datasets", list()):
+            dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
+            self.test_resources.datasets.update({dataset_name: dataset})
+
+    def _prepare_pipelines(self):
+        for pipeline_entity in self.test_utils.config_yaml.get("pipelines", list()):
+            pipeline_template_dpk_name, pipeline_info = self._get_key_value(entity_dict=pipeline_entity)
+            install_pipeline = pipeline_info.get("install_pipeline", None)
+
+            # Validations
+            if not isinstance(install_pipeline, bool):
+                raise ValueError(f"install_pipeline must be a boolean value")
+
+            # Create pipeline
+            pipeline_template_dpk = self.test_resources.dpks.get(pipeline_template_dpk_name)
+            pipeline = self.test_utils.create_pipeline(
+                pipeline_template_dpk=pipeline_template_dpk,
+                install_pipeline=install_pipeline
+            )
+            self.test_resources.pipelines.update({pipeline_template_dpk_name: pipeline})
+
+    def setup(self):
+        self._prepare_dpks_and_apps()
+        self._prepare_datasets()
+        self._prepare_pipelines()
+
+    def _tear_down(self, test_pipeline: dl.Pipeline):
+        test_pipeline.delete()
+
+        pipeline: dl.Pipeline
+        for pipeline in self.test_resources.pipelines.values():
+            pipeline.delete()
+
+        app: dl.App
+        for app in self.test_resources.apps.values():
+            app.uninstall()
+
+        dpk: dl.Dpk
+        for dpk in self.test_resources.dpks.values():
+            dpk.delete()
+
+        dataset: dl.Dataset
+        for dataset in self.test_resources.datasets.values():
+            dataset.delete(sure=True, really=True)
+
+        dl.logout()
+
+    def _search_entity_in_resources(self, entity_name: str, resource_type: str) -> any:
+        test_resource = getattr(self.test_resources, resource_type, None)
+        if isinstance(test_resource, dict):
+            entity = test_resource.get(entity_name, None)
+        else:
+            raise ValueError(f"Resource type '{resource_type}' is not supported")
+
+        return entity
+
+    def _parse_single_variable_value(self, variable_name: str, value_entity: dict) -> any:
+        # Validations
+        if value_entity is None:
+            raise ValueError(f"Value for variable {variable_name} is not provided")
+
+        variable_value_entity_name, variable_value_entity_info = self._get_key_value(entity_dict=value_entity)
+        resource_type = variable_value_entity_info.get("resource_type", None)
+
+        # Get entity
+        entity = self._search_entity_in_resources(entity_name=variable_value_entity_name, resource_type=resource_type)
+
+        # Validations
+        if entity is None:
+            raise ValueError(f"Entity '{variable_value_entity_name}' wasn't found in '{resource_type}'")
+
+        # Get entity field
+        entity_field = variable_value_entity_info.get("entity_field", None)
+        if entity_field is not None:
+            entity_value = getattr(entity, entity_field)
+        else:
+            raise ValueError(f"Entity field '{entity_field}' is not supported")
+
+        return entity_value
+
+    def _parse_variables(self, variables: dict) -> dict:
+        variables_dict = dict()
+        for variable_name, variable_info in variables.items():
+            variable_type = variable_info.get("type", None)
+            # Parse variable single value
+            if variable_type == "SingleValue":
+                value_entity = variable_info.get("value", None)
+                variable_value = self._parse_single_variable_value(
+                    variable_name=variable_name,
+                    value_entity=value_entity
+                )
+                variable_dict = {variable_name: variable_value}
+                variables_dict.update(variable_dict)
+            # Parse variable list of values
+            elif variable_type == "List":
+                variable_value_list = list()
+                value_entity_list = variable_info.get("value", list())
+                for value_entity in value_entity_list:
+                    variable_value = self._parse_single_variable_value(
+                        variable_name=variable_name,
+                        value_entity=value_entity
+                    )
+                    variable_value_list.append(variable_value)
+                variable_dict = {variable_name: variable_value_list}
+                variables_dict.update(variable_dict)
+            # Not supported
+            else:
+                raise ValueError(f"Variable type '{variable_type}' is not supported")
+
+        return variables_dict
+
+    def run(self):
+        test_pipeline: dl.Pipeline = self.test_utils.create_test_pipeline(install_pipeline=False)
+
+        # Update variables
+        variables = self.test_utils.config_yaml.get("variables", dict())
+        variables_dict = self._parse_variables(variables=variables)
+        test_pipeline = self.test_utils.update_pipeline_variable(pipeline=test_pipeline, variables_dict=variables_dict)
+
+        # Execute pipeline
+        test_pipeline.install()
+        pipeline_execution = test_pipeline.execute(execution_input=None)
+        pipeline_execution = self.test_utils.pipeline_execution_wait(pipeline_execution=pipeline_execution)
+
+        # Validate pipeline execution
+        if pipeline_execution.status == dl.ExecutionStatus.SUCCESS.value:
+            self._tear_down(test_pipeline=test_pipeline)
+        else:
+            raise ValueError(f"Pipeline failed with status '{pipeline_execution.status}'")
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Tests Runner')
+    parser.add_argument('--root_path', type=str, default="./", metavar='N',
+                        help='Path of the test directory')
+    parser.add_argument('--test_path', type=str, default=None, metavar='N',
+                        help='Path of the test directory')
+    args = parser.parse_args()
+
+    # Set current working directory as root path
+    if os.path.exists(args.root_path):
+        os.chdir(args.root_path)
+    else:
+        raise ValueError(f"Path {args.root_path} does not exist")
+
+    if args.test_path is None or not os.path.exists(args.test_path):
+        raise ValueError(f"Path {args.test_path} does not exist or was not provided")
+
+    # Run test
+    test_runner = TestRunner(test_args=args)
+    test_runner.setup()
+    test_runner.run()
