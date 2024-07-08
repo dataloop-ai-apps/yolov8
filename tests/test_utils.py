@@ -285,6 +285,9 @@ class TestRunner:
             # Add dpk to creation order
             self.dpks_creation_order.append(dpk_name)
 
+        # Reverse dpks order
+        self.dpks_creation_order.reverse()
+
     def _prepare_datasets(self):
         for dataset_name in self.test_utils.config_yaml.get("datasets", list()):
             dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
@@ -320,12 +323,16 @@ class TestRunner:
             pipeline.delete()
 
         app: dl.App
-        for app in self.test_resources.apps.values():
-            app.uninstall()
+        for app_name in self.dpks_creation_order:
+            app = self.test_resources.apps.get(app_name, None)
+            if app is not None:
+                app.uninstall()
 
         dpk: dl.Dpk
-        for dpk in self.test_resources.dpks.values():
-            dpk.delete()
+        for dpk_name in self.dpks_creation_order:
+            dpk = self.test_resources.dpks.get(dpk_name, None)
+            if dpk is not None:
+                dpk.delete()
 
         dataset: dl.Dataset
         for dataset in self.test_resources.datasets.values():
