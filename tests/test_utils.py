@@ -349,27 +349,22 @@ class TestRunner:
     def _prepare_datasets(self):
         for dataset_entity in self.test_utils.config_yaml.get("datasets", list()):
             dataset_name, dataset_info = self._get_key_value(entity_dict=dataset_entity)
-            dataset_source = dataset_info.get("source_app", None)
-
-            # Validations
-            if dataset_source is None:
-                raise ValueError("Dataset location must be provided")
+            source_app = dataset_info.get("source_app", None)
 
             # Local dataset
-            if dataset_source is None:
+            if source_app is None:
                 dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
             # Remote dataset
             else:
-                source_app = dataset_info.get("source_app", None)
+                app = self.test_resources.apps.get(source_app, None)
 
                 # Validations
-                if source_app is None:
-                    raise ValueError("Dataset source_app must be provided")
+                if app is None:
+                    raise ValueError(f"App '{source_app}' was not found")
 
-                app = self.test_resources.apps.get(source_app)
                 datasets = self.test_utils.get_datasets(app=app, component_name=dataset_name)
                 if len(datasets) > 1:
-                    raise ValueError(f"Multiple datasets with name '{dataset_name}' were found")
+                    raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
                 dataset = datasets[0]
 
             self.test_resources.datasets.update({dataset_name: dataset})
@@ -387,12 +382,35 @@ class TestRunner:
             # Get model app
             app = self.test_resources.apps.get(source_app, None)
 
+            # Validations
+            if app is None:
+                raise ValueError(f"App '{source_app}' was not found")
+
             # Find model in models
             models = self.test_utils.get_models(app=app, component_name=model_name)
             if len(models) > 1:
-                raise ValueError(f"Multiple models with name '{model_name}' were found")
+                raise ValueError(f"Multiple models with the name '{model_name}' were found")
             model = models[0]
             self.test_resources.models.update({model_name: model})
+
+    def _prepare_services(self):
+        for service_entity in self.test_utils.config_yaml.get("services", list()):
+            service_name, service_info = self._get_key_value(entity_dict=service_entity)
+            source_app = service_info.get("source_app", None)
+
+            # Get service app
+            app = self.test_resources.apps.get(source_app, None)
+
+            # Validations
+            if app is None:
+                raise ValueError(f"App '{source_app}' was not found")
+
+            # Find service in services
+            services = self.test_utils.get_services(app=app, component_name=service_name)
+            if len(services) > 1:
+                raise ValueError(f"Multiple services with the name '{service_name}' were found")
+            service = services[0]
+            self.test_resources.services.update({service_name: service})
 
     def _prepare_pipelines(self):
         for pipeline_entity in self.test_utils.config_yaml.get("pipelines", list()):
@@ -404,7 +422,12 @@ class TestRunner:
                 raise ValueError(f"install_pipeline must be a boolean value")
 
             # Create pipeline
-            pipeline_template_dpk = self.test_resources.dpks.get(pipeline_template_dpk_name)
+            pipeline_template_dpk = self.test_resources.dpks.get(pipeline_template_dpk_name, None)
+
+            # Validations
+            if pipeline_template_dpk is None:
+                raise ValueError(f"Dpk '{pipeline_template_dpk}' was not found")
+
             pipeline = self.test_utils.create_pipeline(
                 pipeline_template_dpk=pipeline_template_dpk,
                 install_pipeline=install_pipeline
@@ -415,6 +438,7 @@ class TestRunner:
         self._prepare_dpks_and_apps()
         self._prepare_datasets()
         self._prepare_models()
+        self._prepare_services()
         self._prepare_pipelines()
 
     def _tear_down(self, test_pipeline: dl.Pipeline):
