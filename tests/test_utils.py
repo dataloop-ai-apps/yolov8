@@ -62,33 +62,32 @@ class TestUtils:
         dataset: dl.Dataset = self.project.datasets.create(dataset_name=new_dataset_name)
 
         # Get paths
-        ontology_path = os.path.join(self.datasets_path, dataset_name, 'ontology')
-        items_path = os.path.join(self.datasets_path, dataset_name, 'items')
-        annotations_path = os.path.join(self.datasets_path, dataset_name, 'json')
+        ontology_json_folder_path = os.path.join(self.datasets_path, dataset_name, 'ontology')
+        items_folder_path = os.path.join(self.datasets_path, dataset_name, 'items')
+        annotation_jsons_folder_path = os.path.join(self.datasets_path, dataset_name, 'json')
 
         # Check existence of paths
-        ontology_exist = os.path.exists(ontology_path)
-        items_exist = os.path.exists(items_path)
-        annotations_exist = os.path.exists(annotations_path)
+        # ontology_exist = os.path.exists(ontology_path)
+        # items_exist = os.path.exists(items_path)
+        # annotations_exist = os.path.exists(annotations_path)
 
         # Upload ontology if exists
-        if ontology_exist:
-            ontology_json_filepath = list(pathlib.Path(ontology_path).rglob('*.json'))[0]
+        if os.path.exists(ontology_json_folder_path) is True:
+            ontology_json_filepath = list(pathlib.Path(ontology_json_folder_path).rglob('*.json'))[0]
             with open(ontology_json_filepath, 'r') as f:
                 ontology_json = json.load(f)
             ontology: dl.Ontology = dataset.ontologies.list()[0]
             ontology.copy_from(ontology_json=ontology_json)
 
         # Upload items without metadata/tags and without annotations
-        if items_exist and not annotations_exist:
-            items_path = os.path.join(items_path, '*')  # Prevents creating directory
+        if os.path.exists(items_folder_path) is True and os.path.exists(annotation_jsons_folder_path) is False:
+            items_path = os.path.join(items_folder_path, '*')  # Prevents creating directory
             dataset.items.upload(local_path=items_path)
 
-        # TODO: improve names and put exits in the if conditions
         # Upload items with metadata/tags and annotations
-        if os.path.exists(items_path) is True and annotations_exist:
-            item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_path).rglob('*'))))
-            annotation_jsons = sorted(list(pathlib.Path(annotations_path).rglob('*.json')))
+        if os.path.exists(items_folder_path) is True and os.path.exists(annotation_jsons_folder_path) is True:
+            item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_folder_path).rglob('*'))))
+            annotation_jsons = sorted(list(pathlib.Path(annotation_jsons_folder_path).rglob('*.json')))
             for item_binary, annotation_json in zip(item_binaries, annotation_jsons):
                 # Load annotation json
                 with open(annotation_json, 'r') as f:
