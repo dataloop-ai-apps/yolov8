@@ -14,7 +14,7 @@ logger = logging.getLogger(name='dtlpy')
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
-ENV = os.environ['ENV']
+# ENV = os.environ['ENV']
 COMMIT_ID = os.environ['COMMIT_ID']
 
 
@@ -32,6 +32,8 @@ class TestUtils:
         self._setup()
 
     def _setup(self):
+        # TODO: Add validations for existence of files
+
         # Load '.dataloop.cfg'
         dataloop_cfg_filepath = os.path.join(self.root_path, '.dataloop.cfg')
         with open(dataloop_cfg_filepath, 'r') as f:
@@ -82,8 +84,9 @@ class TestUtils:
             items_path = os.path.join(items_path, '*')  # Prevents creating directory
             dataset.items.upload(local_path=items_path)
 
+        # TODO: improve names and put exits in the if conditions
         # Upload items with metadata/tags and annotations
-        if items_exist and annotations_exist:
+        if os.path.exists(items_path) is True and annotations_exist:
             item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_path).rglob('*'))))
             annotation_jsons = sorted(list(pathlib.Path(annotations_path).rglob('*.json')))
             for item_binary, annotation_json in zip(item_binaries, annotation_jsons):
@@ -137,6 +140,8 @@ class TestUtils:
         dpk.scope = "project"
         dpk.codebase = None
 
+        # TODO: check if triggers need to renamed
+
         # Set directory to dpk directory
         dpk_dir = os.path.join(self.root_path, os.path.dirname(dpk_json_filepath))
         os.chdir(dpk_dir)
@@ -144,7 +149,7 @@ class TestUtils:
         # Publish dpk and install app
         dpk = self.project.dpks.publish(dpk=dpk)
         app = None
-        if install_app:
+        if install_app is True:
             app = self.project.apps.install(dpk=dpk)
 
         # Return to original directory
@@ -229,6 +234,7 @@ class TestUtils:
     def update_pipeline_variable(pipeline: dl.Pipeline, variables_dict: dict) -> dl.Pipeline:
         variable_keys = list(variables_dict.keys())
         variable: dl.Variable
+        # TODO: Check if this exists in the SDK
         for variable in pipeline.variables:
             if variable.name in variable_keys:
                 variable.value = variables_dict[variable.name]
@@ -270,7 +276,7 @@ class TestRunner:
 
     def _init_test_utils(self):
         # Login and get project
-        dl.setenv(ENV)
+        # dl.setenv(ENV)
         dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         self.project = dl.projects.get(project_id=PROJECT_ID)
         self.commit_id = COMMIT_ID
@@ -348,6 +354,10 @@ class TestRunner:
         self._prepare_datasets()
         self._prepare_models()
         self._prepare_pipelines()
+
+    # TODO: Add cleanup (waiting for decided test identifier)
+    def _clean_up(self):
+        pass
 
     def _tear_down(self, test_pipeline: dl.Pipeline):
         test_pipeline.delete()
