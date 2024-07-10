@@ -1,0 +1,25 @@
+# ordered list of dpks to publish and install
+dpks:
+    - yolov8:
+        install_app: True
+
+# ordered list of datasets to create
+datasets:
+    - dataset
+
+# ordered list of models to get from app/dpk
+models:
+    - yolov8:
+        deploy_model: False
+        model_index: 0
+
+# list of pipeline variables to update with reference
+variables:
+    dataset:
+        dataset:
+            resource_type: datasets
+            entity_field: id
+    model:
+        yolov8:
+            resource_type: models
+            entity_field: id

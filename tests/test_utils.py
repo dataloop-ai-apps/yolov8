@@ -408,22 +408,17 @@ class TestRunner:
         if entity is None:
             raise ValueError(f"Entity '{variable_value_entity_name}' wasn't found in '{resource_type}'")
 
-        # Get entity field
-        entity_field = variable_value_entity_info.get("entity_field", None)
-        if entity_field is not None:
-            entity_value = getattr(entity, entity_field)
-        else:
-            raise ValueError(f"Entity field '{entity_field}' is not supported")
-
+        # Get entity field (Default is 'id')
+        entity_field = variable_value_entity_info.get("entity_field", "id")
+        entity_value = getattr(entity, entity_field)
         return entity_value
 
     def _parse_variables(self, variables: dict) -> dict:
         variables_dict = dict()
         for variable_name, variable_info in variables.items():
-            variable_type = variable_info.get("type", None)
             # Parse variable single value
-            if variable_type == "SingleValue":
-                value_entity = variable_info.get("value", None)
+            if isinstance(variable_info, dict):
+                value_entity = variable_info
                 variable_value = self._parse_single_variable_value(
                     variable_name=variable_name,
                     value_entity=value_entity
@@ -431,10 +426,9 @@ class TestRunner:
                 variable_dict = {variable_name: variable_value}
                 variables_dict.update(variable_dict)
             # Parse variable list of values
-            elif variable_type == "List":
+            elif isinstance(variable_info, list):
                 variable_value_list = list()
-                value_entity_list = variable_info.get("value", list())
-                for value_entity in value_entity_list:
+                for value_entity in variable_info:
                     variable_value = self._parse_single_variable_value(
                         variable_name=variable_name,
                         value_entity=value_entity
@@ -444,7 +438,7 @@ class TestRunner:
                 variables_dict.update(variable_dict)
             # Not supported
             else:
-                raise ValueError(f"Variable type '{variable_type}' is not supported")
+                raise ValueError(f"Variable '{variable_name}' value type is not supported")
 
         return variables_dict
 
