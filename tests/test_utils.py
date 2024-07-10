@@ -180,12 +180,13 @@ class TestUtils:
 
         # Get datasets
         datasets = self.project.datasets.list(filters=filters)
-        if isinstance(datasets, dl.entities.PagedEntities):
-            datasets = list(datasets.all())
 
         # Validations
         if len(datasets) == 0:
             raise ValueError("No Datasets were found")
+
+        if isinstance(datasets, dl.entities.PagedEntities):
+            datasets = list(datasets.all())
         return datasets
 
     def get_models(self, dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> List[dl.Model]:
@@ -204,12 +205,13 @@ class TestUtils:
 
         # Get models
         models = self.project.models.list(filters=filters)
-        if isinstance(models, dl.entities.PagedEntities):
-            models = list(models.all())
 
         # Validations
         if len(models) == 0:
             raise ValueError("No models were found")
+
+        if isinstance(models, dl.entities.PagedEntities):
+            models = list(models.all())
         return models
 
     def get_services(self, dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> [dl.Service]:
@@ -228,12 +230,13 @@ class TestUtils:
 
         # Get service
         services = self.project.models.list(filters=filters)
-        if isinstance(services, dl.entities.PagedEntities):
-            services = list(services.all())
 
         # Validations
         if len(services) == 0:
             raise ValueError("No services were found")
+
+        if isinstance(services, dl.entities.PagedEntities):
+            services = list(services.all())
         return services
 
     def _create_pipeline_from_json(self, pipeline_json: dict, install_pipeline: bool = True) -> dl.Pipeline:
@@ -312,6 +315,10 @@ class TestRunner:
             test_path=self.test_path
         )
 
+    # TODO: Add cleanup (waiting for decided test identifier)
+    def _clean_up(self):
+        pass
+
     @staticmethod
     def _get_key_value(entity_dict: dict) -> (str, dict):
         key = list(entity_dict.keys())[0]
@@ -342,15 +349,17 @@ class TestRunner:
     def _prepare_datasets(self):
         for dataset_entity in self.test_utils.config_yaml.get("datasets", list()):
             dataset_name, dataset_info = self._get_key_value(entity_dict=dataset_entity)
-            dataset_source = dataset_info.get("location", None)
+            dataset_source = dataset_info.get("source_app", None)
 
             # Validations
             if dataset_source is None:
                 raise ValueError("Dataset location must be provided")
 
-            if dataset_source == "local":
+            # Local dataset
+            if dataset_source is None:
                 dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
-            elif dataset_source == "remote":
+            # Remote dataset
+            else:
                 source_app = dataset_info.get("source_app", None)
 
                 # Validations
@@ -362,8 +371,6 @@ class TestRunner:
                 if len(datasets) > 1:
                     raise ValueError(f"Multiple datasets with name '{dataset_name}' were found")
                 dataset = datasets[0]
-            else:
-                raise ValueError(f"Dataset source '{dataset_source}' is not supported")
 
             self.test_resources.datasets.update({dataset_name: dataset})
 
@@ -409,10 +416,6 @@ class TestRunner:
         self._prepare_datasets()
         self._prepare_models()
         self._prepare_pipelines()
-
-    # TODO: Add cleanup (waiting for decided test identifier)
-    def _clean_up(self):
-        pass
 
     def _tear_down(self, test_pipeline: dl.Pipeline):
         test_pipeline.delete()

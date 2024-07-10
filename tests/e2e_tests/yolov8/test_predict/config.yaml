@@ -3,12 +3,12 @@ dpks:
     - yolov8:
         install_app: True
 
-# ordered list of datasets to create
+# ordered list of datasets to create/get from apps
 datasets:
     - dataset:
-        location: local
+        source_app: null  # null means the dataset is from the local assets
 
-# ordered list of models to get from app/dpk
+# ordered list of models to get from apps
 models:
     - yolov8:
         deploy_model: False
