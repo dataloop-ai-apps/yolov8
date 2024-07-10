@@ -321,15 +321,15 @@ class TestRunner:
     def _prepare_models(self):
         for model_entity in self.test_utils.config_yaml.get("models", list()):
             model_app_name, model_info = self._get_key_value(entity_dict=model_entity)
-            model_name = model_info.get("model_index", None)
+            model_index = model_info.get("model_index", 0)
 
             # Get model app
             app = self.test_resources.apps.get(model_app_name, None)
 
             # Find model in models
             models = self.test_utils.get_models(app=app)
-            model = self.test_utils.get_model_from_list(model_index=model_name, models=models)
-            self.test_resources.models.update({model_name: model})
+            model = self.test_utils.get_model_from_list(model_index=model_index, models=models)
+            self.test_resources.models.update({model_app_name: model})
 
     def _prepare_pipelines(self):
         for pipeline_entity in self.test_utils.config_yaml.get("pipelines", list()):
