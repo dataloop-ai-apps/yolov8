@@ -5,13 +5,14 @@ dpks:
 
 # ordered list of datasets to create
 datasets:
-    - dataset
+    - dataset:
+        location: local
 
 # ordered list of models to get from app/dpk
 models:
     - yolov8:
         deploy_model: False
-        model_index: 0
+        source_app: yolov8
 
 # list of pipeline variables to update with reference
 variables:

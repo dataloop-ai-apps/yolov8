@@ -14,7 +14,6 @@ logger = logging.getLogger(name='dtlpy')
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
 PROJECT_ID = os.environ['PROJECT_ID']
-# ENV = os.environ['ENV']
 COMMIT_ID = os.environ['COMMIT_ID']
 
 
@@ -32,20 +31,27 @@ class TestUtils:
         self._setup()
 
     def _setup(self):
-        # TODO: Add validations for existence of files
+        dataloop_cfg_filepath = os.path.join(self.root_path, ".dataloop.cfg")
+        config_yaml_filepath = os.path.join(self.test_path, "config.yaml")
+        template_json_filepath = os.path.join(self.test_path, "template.json")
+
+        # Validations
+        if not os.path.exists(dataloop_cfg_filepath):
+            raise ValueError(f"'.dataloop.cfg' file wasn't found in '{self.root_path}'")
+        if not os.path.exists(config_yaml_filepath):
+            raise ValueError(f"'config.yaml' file wasn't found in '{self.test_path}'")
+        if not os.path.exists(template_json_filepath):
+            raise ValueError(f"'template.json' file wasn't found in '{self.test_path}'")
 
         # Load '.dataloop.cfg'
-        dataloop_cfg_filepath = os.path.join(self.root_path, '.dataloop.cfg')
         with open(dataloop_cfg_filepath, 'r') as f:
             self.dataloop_cfg = json.loads(f.read())
 
         # Load 'config.yaml'
-        config_yaml_filepath = os.path.join(self.test_path, 'config.yaml')
         with open(config_yaml_filepath, 'r') as f:
             self.config_yaml = yaml.load(f, Loader=yaml.FullLoader)
 
         # Load 'template.json'
-        template_json_filepath = os.path.join(self.test_path, 'template.json')
         with open(template_json_filepath, 'r') as f:
             self.template_json = json.load(f)
 
@@ -66,11 +72,6 @@ class TestUtils:
         items_folder_path = os.path.join(self.datasets_path, dataset_name, 'items')
         annotation_jsons_folder_path = os.path.join(self.datasets_path, dataset_name, 'json')
 
-        # Check existence of paths
-        # ontology_exist = os.path.exists(ontology_path)
-        # items_exist = os.path.exists(items_path)
-        # annotations_exist = os.path.exists(annotations_path)
-
         # Upload ontology if exists
         if os.path.exists(ontology_json_folder_path) is True:
             ontology_json_filepath = list(pathlib.Path(ontology_json_folder_path).rglob('*.json'))[0]
@@ -88,6 +89,15 @@ class TestUtils:
         if os.path.exists(items_folder_path) is True and os.path.exists(annotation_jsons_folder_path) is True:
             item_binaries = sorted(list(filter(lambda x: x.is_file(), pathlib.Path(items_folder_path).rglob('*'))))
             annotation_jsons = sorted(list(pathlib.Path(annotation_jsons_folder_path).rglob('*.json')))
+
+            # Validations
+            if len(item_binaries) != len(annotation_jsons):
+                raise ValueError(
+                    f"Number of items ({len(item_binaries)}) "
+                    f"is not equal to number of annotations ({len(annotation_jsons)})"
+                )
+
+            # Upload each item with its related json
             for item_binary, annotation_json in zip(item_binaries, annotation_jsons):
                 # Load annotation json
                 with open(annotation_json, 'r') as f:
@@ -139,7 +149,7 @@ class TestUtils:
         dpk.scope = "project"
         dpk.codebase = None
 
-        # TODO: check if triggers need to renamed
+        # TODO: check if triggers need to be renamed
 
         # Set directory to dpk directory
         dpk_dir = os.path.join(self.root_path, os.path.dirname(dpk_json_filepath))
@@ -155,28 +165,65 @@ class TestUtils:
         os.chdir(self.root_path)
         return dpk, app
 
+    def get_datasets(self, dpk: dl.Dpk = None, app: dl.App = None) -> List[dl.Dataset]:
+        filters = dl.Filters(resource=dl.FiltersResource.DATASET)
+        if dpk is None and app is None:
+            raise ValueError("Either dpk or app must be provided")
+        elif dpk is not None:
+            filters.add(field="metadata.system.app.dpkId", values=dpk.id)
+        else:
+            filters.add(field="metadata.system.app.id", values=app.id)
+        datasets = self.project.datasets.list(filters=filters)
+        if isinstance(datasets, dl.entities.PagedEntities):
+            datasets = list(datasets.all())
+
+        # Validations
+        if len(datasets) == 0:
+            raise ValueError("No Datasets were found")
+        return datasets
+
+    @staticmethod
+    def get_dataset_from_list(dataset_name: str, datasets: List[dl.Dataset]) -> dl.Dataset:
+        result_dataset = None
+        for dataset in datasets:
+            if dataset.metadata.get("system", dict()).get("app", dict()).get("componentName", None) == dataset_name:
+                result_dataset = dataset
+                break
+
+        # Validations
+        if result_dataset is None:
+            raise ValueError(f"Dataset '{dataset_name}' was not found")
+        return result_dataset
+
     def get_models(self, dpk: dl.Dpk = None, app: dl.App = None) -> List[dl.Model]:
         filters = dl.Filters(resource=dl.FiltersResource.MODEL)
-
         if dpk is None and app is None:
             raise ValueError("Either dpk or app must be provided")
         elif dpk is not None:
             filters.add(field="app.dpkId", values=dpk.id)
         else:
             filters.add(field="app.id", values=app.id)
-
         models = self.project.models.list(filters=filters)
         if isinstance(models, dl.entities.PagedEntities):
             models = list(models.all())
+
+        # Validations
+        if len(models) == 0:
+            raise ValueError("No models were found")
         return models
 
     @staticmethod
-    def get_model_from_list(model_index: int, models: List[dl.Model]) -> dl.Model:
-        # Validations
-        if model_index < 0 or model_index >= len(models):
-            raise ValueError(f"Model index '{model_index}' is out of bounds")
+    def get_model_from_list(model_name: str, models: List[dl.Model]) -> dl.Model:
+        result_model = None
+        for model in models:
+            if model.metadata.get("system", dict()).get("app", dict()).get("componentName", None) == model_name:
+                result_model = model
+                break
 
-        return models[model_index]
+        # Validations
+        if result_model is None:
+            raise ValueError(f"Model '{model_name}' was not found")
+        return result_model
 
     def get_services(self, dpk: dl.Dpk) -> [dl.Service]:
         filters = dl.Filters(resource=dl.FiltersResource.SERVICE)
@@ -184,30 +231,15 @@ class TestUtils:
         services = self.project.services.list(filters=filters)
         if isinstance(services, dl.entities.PagedEntities):
             services = list(services.all())
+
+        # Validations
+        if len(services) == 0:
+            raise ValueError("No services were found")
         return services
 
     @staticmethod
-    def get_service_from_list(service_index: int, services: List[dl.Service]) -> dl.Service:
-        # Validations
-        if service_index < 0 or service_index >= len(services):
-            raise ValueError(f"Service index '{service_index}' is out of bounds")
-
-        return services[service_index]
-
-    def get_datasets(self, dpk: dl.Dpk = None, app: dl.App = None) -> List[dl.Service]:
-        filters = dl.Filters(resource=dl.FiltersResource.DATASET)
-
-        if dpk is None and app is None:
-            raise ValueError("Either dpk or app must be provided")
-        elif dpk is not None:
-            filters.add(field="metadata.system.app.dpkId", values=dpk.id)
-        else:
-            filters.add(field="metadata.system.app.id", values=app.id)
-
-        datasets = self.project.datasets.list(filters=filters)
-        if isinstance(datasets, dl.entities.PagedEntities):
-            datasets = list(datasets.all())
-        return datasets
+    def get_service_from_list(service_identifier: str, services: List[dl.Service]) -> dl.Service:
+        pass  # TODO: Check if this is needed
 
     def _create_pipeline_from_json(self, pipeline_json: dict, install_pipeline: bool = True) -> dl.Pipeline:
         new_pipeline_name = f'{pipeline_json["name"]}-{self.tag}'[:35]
@@ -275,7 +307,6 @@ class TestRunner:
 
     def _init_test_utils(self):
         # Login and get project
-        # dl.setenv(ENV)
         dl.login_m2m(email=BOT_EMAIL, password=BOT_PWD)
         self.project = dl.projects.get(project_id=PROJECT_ID)
         self.commit_id = COMMIT_ID
@@ -299,7 +330,7 @@ class TestRunner:
 
             # Validations
             if not isinstance(install_app, bool):
-                raise ValueError(f"install_app must be a boolean value")
+                raise ValueError("install_app must be a boolean value")
 
             # Publish dpk and install app
             dpk, app = self.test_utils.publish_dpk_and_install_app(dpk_name=dpk_name, install_app=install_app)
@@ -314,21 +345,48 @@ class TestRunner:
         self.dpks_creation_order.reverse()
 
     def _prepare_datasets(self):
-        for dataset_name in self.test_utils.config_yaml.get("datasets", list()):
-            dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
+        for dataset_entity in self.test_utils.config_yaml.get("datasets", list()):
+            dataset_name, dataset_info = self._get_key_value(entity_dict=dataset_entity)
+            dataset_source = dataset_info.get("location", None)
+
+            # Validations
+            if dataset_source is None:
+                raise ValueError("Dataset location must be provided")
+
+            if dataset_source == "local":
+                dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
+            elif dataset_source == "remote":
+                source_app = dataset_info.get("source_app", None)
+
+                # Validations
+                if source_app is None:
+                    raise ValueError("Dataset source_app must be provided")
+
+                app = self.test_resources.apps.get(source_app)
+                datasets = self.test_utils.get_datasets(app=app)
+                dataset = self.test_utils.get_dataset_from_list(dataset_name=dataset_name, datasets=datasets)
+            else:
+                raise ValueError(f"Dataset source '{dataset_source}' is not supported")
+
             self.test_resources.datasets.update({dataset_name: dataset})
 
     def _prepare_models(self):
         for model_entity in self.test_utils.config_yaml.get("models", list()):
             model_app_name, model_info = self._get_key_value(entity_dict=model_entity)
-            model_index = model_info.get("model_index", 0)
+            deploy_model = model_info.get("deploy_model", None)
+            source_dpk = model_info.get("source_dpk", None)
+
+            # Validations
+            if not isinstance(deploy_model, bool):
+                raise ValueError("install_app must be a boolean value")
 
             # Get model app
             app = self.test_resources.apps.get(model_app_name, None)
 
             # Find model in models
             models = self.test_utils.get_models(app=app)
-            model = self.test_utils.get_model_from_list(model_index=model_index, models=models)
+            #TODO
+            model = self.test_utils.get_model_from_list(dataset_name=model_app_name, datasets=models)
             self.test_resources.models.update({model_app_name: model})
 
     def _prepare_pipelines(self):
