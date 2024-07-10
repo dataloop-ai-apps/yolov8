@@ -1,4 +1,5 @@
 import dtlpy as dl
+from typing import List
 import json
 import time
 import uuid
@@ -6,7 +7,9 @@ import os
 import pathlib
 import argparse
 import yaml  # Required Installation
+import logging
 
+logger = logging.getLogger(name='dtlpy')
 
 BOT_EMAIL = os.environ['BOT_EMAIL']
 BOT_PWD = os.environ['BOT_PWD']
@@ -148,7 +151,7 @@ class TestUtils:
         os.chdir(self.root_path)
         return dpk, app
 
-    def get_models(self, dpk: dl.Dpk = None, app: dl.App = None) -> [dl.Model]:
+    def get_models(self, dpk: dl.Dpk = None, app: dl.App = None) -> List[dl.Model]:
         filters = dl.Filters(resource=dl.FiltersResource.MODEL)
 
         if dpk is None and app is None:
@@ -163,6 +166,14 @@ class TestUtils:
             models = list(models.all())
         return models
 
+    @staticmethod
+    def get_model_from_list(model_index: int, models: List[dl.Model]) -> dl.Model:
+        # Validations
+        if model_index < 0 or model_index >= len(models):
+            raise ValueError(f"Model index '{model_index}' is out of bounds")
+
+        return models[model_index]
+
     def get_services(self, dpk: dl.Dpk) -> [dl.Service]:
         filters = dl.Filters(resource=dl.FiltersResource.SERVICE)
         filters.add(field="packageId", values=dpk.id)
@@ -171,7 +182,15 @@ class TestUtils:
             services = list(services.all())
         return services
 
-    def get_datasets(self, dpk: dl.Dpk = None, app: dl.App = None) -> [dl.Service]:
+    @staticmethod
+    def get_service_from_list(service_index: int, services: List[dl.Service]) -> dl.Service:
+        # Validations
+        if service_index < 0 or service_index >= len(services):
+            raise ValueError(f"Service index '{service_index}' is out of bounds")
+
+        return services[service_index]
+
+    def get_datasets(self, dpk: dl.Dpk = None, app: dl.App = None) -> List[dl.Service]:
         filters = dl.Filters(resource=dl.FiltersResource.DATASET)
 
         if dpk is None and app is None:
@@ -217,7 +236,7 @@ class TestUtils:
         return pipeline
 
     @staticmethod
-    def pipeline_execution_wait(pipeline_execution: dl.PipelineExecution):
+    def pipeline_execution_wait(pipeline_execution: dl.PipelineExecution) -> dl.PipelineExecution:
         pipeline = pipeline_execution.pipeline
         in_progress_statuses = ["pending", "in-progress"]
         while pipeline_execution.status in in_progress_statuses:
@@ -232,6 +251,7 @@ class TestResources:
         self.apps = dict()
         self.datasets = dict()
         self.models = dict()
+        self.services = dict()
         self.pipelines = dict()
 
 
@@ -293,6 +313,19 @@ class TestRunner:
             dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
             self.test_resources.datasets.update({dataset_name: dataset})
 
+    def _prepare_models(self):
+        for model_entity in self.test_utils.config_yaml.get("models", list()):
+            model_app_name, model_info = self._get_key_value(entity_dict=model_entity)
+            model_name = model_info.get("model_index", None)
+
+            # Get model app
+            app = self.test_resources.apps.get(model_app_name, None)
+
+            # Find model in models
+            models = self.test_utils.get_models(app=app)
+            model = self.test_utils.get_model_from_list(model_index=model_name, models=models)
+            self.test_resources.models.update({model_name: model})
+
     def _prepare_pipelines(self):
         for pipeline_entity in self.test_utils.config_yaml.get("pipelines", list()):
             pipeline_template_dpk_name, pipeline_info = self._get_key_value(entity_dict=pipeline_entity)
@@ -313,6 +346,7 @@ class TestRunner:
     def setup(self):
         self._prepare_dpks_and_apps()
         self._prepare_datasets()
+        self._prepare_models()
         self._prepare_pipelines()
 
     def _tear_down(self, test_pipeline: dl.Pipeline):
@@ -341,9 +375,9 @@ class TestRunner:
         dl.logout()
 
     def _search_entity_in_resources(self, entity_name: str, resource_type: str) -> any:
-        test_resource = getattr(self.test_resources, resource_type, None)
-        if isinstance(test_resource, dict):
-            entity = test_resource.get(entity_name, None)
+        available_resources = self.test_resources.__dict__
+        if resource_type in list(available_resources.keys()):
+            entity = available_resources[resource_type].get(entity_name, None)
         else:
             raise ValueError(f"Resource type '{resource_type}' is not supported")
 
@@ -420,6 +454,7 @@ class TestRunner:
         # Validate pipeline execution
         if pipeline_execution.status == dl.ExecutionStatus.SUCCESS.value:
             self._tear_down(test_pipeline=test_pipeline)
+            logger.info(f"Test passed successfully!")
         else:
             raise ValueError(f"Pipeline failed with status '{pipeline_execution.status}'")
 
