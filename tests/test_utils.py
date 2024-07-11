@@ -1,5 +1,5 @@
 import dtlpy as dl
-from typing import List
+from typing import List, Union
 import json
 import time
 import uuid
@@ -165,18 +165,25 @@ class TestUtils:
         os.chdir(self.root_path)
         return dpk, app
 
-    def get_datasets(self, dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> List[dl.Dataset]:
-        if dpk is None and app is None:
-            raise ValueError("Either dpk or app must be provided")
-
+    @staticmethod
+    def _build_filters(filters_resource: dl.FiltersResource,
+                       dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> dl.Filters:
         # Build filters
-        filters = dl.Filters(resource=dl.FiltersResource.DATASET)
+        filters = dl.Filters(resource=filters_resource)
         if dpk is not None:
             filters.add(field="metadata.system.app.dpkId", values=dpk.id)
         if app is not None:
             filters.add(field="metadata.system.app.id", values=app.id)
         if component_name is not None:
             filters.add(field="app.componentName", values=component_name)
+        return filters
+
+    def get_datasets(self, dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> List[dl.Dataset]:
+        # Build filters
+        filters = self._build_filters(
+            filters_resource=dl.FiltersResource.DATASET,
+            dpk=dpk, app=app, component_name=component_name
+        )
 
         # Get datasets
         datasets = self.project.datasets.list(filters=filters)
@@ -190,18 +197,11 @@ class TestUtils:
         return datasets
 
     def get_models(self, dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> List[dl.Model]:
-        # Validations
-        if dpk is None and app is None:
-            raise ValueError("Either dpk or app must be provided")
-
         # Build filters
-        filters = dl.Filters(resource=dl.FiltersResource.MODEL)
-        if dpk is not None:
-            filters.add(field="app.dpkId", values=dpk.id)
-        if app is not None:
-            filters.add(field="app.id", values=app.id)
-        if component_name is not None:
-            filters.add(field="app.componentName", values=component_name)
+        filters = self._build_filters(
+            filters_resource=dl.FiltersResource.MODEL,
+            dpk=dpk, app=app, component_name=component_name
+        )
 
         # Get models
         models = self.project.models.list(filters=filters)
@@ -215,18 +215,11 @@ class TestUtils:
         return models
 
     def get_services(self, dpk: dl.Dpk = None, app: dl.App = None, component_name: str = None) -> [dl.Service]:
-        # Validations
-        if dpk is None and app is None:
-            raise ValueError("Either dpk or app must be provided")
-
         # Build filters
-        filters = dl.Filters(resource=dl.FiltersResource.SERVICE)
-        if dpk is not None:
-            filters.add(field="app.dpkId", values=dpk.id)
-        if app is not None:
-            filters.add(field="app.id", values=app.id)
-        if component_name is not None:
-            filters.add(field="app.componentName", values=component_name)
+        filters = self._build_filters(
+            filters_resource=dl.FiltersResource.SERVICE,
+            dpk=dpk, app=app, component_name=component_name
+        )
 
         # Get service
         services = self.project.models.list(filters=filters)
@@ -320,15 +313,21 @@ class TestRunner:
         pass
 
     @staticmethod
-    def _get_key_value(entity_dict: dict) -> (str, dict):
-        key = list(entity_dict.keys())[0]
-        value = entity_dict[key]
+    def _get_key_value(entity_dict: Union[dict, str]) -> (str, dict):
+        if isinstance(entity_dict, dict):
+            key = list(entity_dict.keys())[0]
+            value = entity_dict[key]
+        elif isinstance(entity_dict, str):
+            key = entity_dict
+            value = dict()
+        else:
+            raise ValueError("Entity must be a dictionary or a string")
         return key, value
 
     def _prepare_dpks_and_apps(self):
         for dpk_entity in self.test_utils.config_yaml.get("dpks", list()):
             dpk_name, dpk_info = self._get_key_value(entity_dict=dpk_entity)
-            install_app = dpk_info.get("install_app", None)
+            install_app = dpk_info.get("install_app", False)
 
             # Validations
             if not isinstance(install_app, bool):
@@ -356,13 +355,17 @@ class TestRunner:
                 dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
             # Remote dataset
             else:
+                # Get dataset app
                 app = self.test_resources.apps.get(source_app, None)
 
                 # Validations
                 if app is None:
                     raise ValueError(f"App '{source_app}' was not found")
 
+                # Find dataset in datasets
                 datasets = self.test_utils.get_datasets(app=app, component_name=dataset_name)
+
+                # Validations
                 if len(datasets) > 1:
                     raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
                 dataset = datasets[0]
@@ -372,22 +375,29 @@ class TestRunner:
     def _prepare_models(self):
         for model_entity in self.test_utils.config_yaml.get("models", list()):
             model_name, model_info = self._get_key_value(entity_dict=model_entity)
-            deploy_model = model_info.get("deploy_model", None)
+            deploy_model = model_info.get("deploy_model", False)
             source_app = model_info.get("source_app", None)
 
             # Validations
             if not isinstance(deploy_model, bool):
-                raise ValueError("install_app must be a boolean value")
+                raise ValueError("deploy_model must be a boolean value")
 
-            # Get model app
-            app = self.test_resources.apps.get(source_app, None)
+            # Model created by dependency
+            if source_app is None:
+                models = self.test_utils.get_models(component_name=model_name)
+            # Model created by current installed apps
+            else:
+                # Get model app
+                app = self.test_resources.apps.get(source_app, None)
+
+                # Validations
+                if app is None:
+                    raise ValueError(f"App '{source_app}' was not found")
+
+                # Find model in models
+                models = self.test_utils.get_models(app=app, component_name=model_name)
 
             # Validations
-            if app is None:
-                raise ValueError(f"App '{source_app}' was not found")
-
-            # Find model in models
-            models = self.test_utils.get_models(app=app, component_name=model_name)
             if len(models) > 1:
                 raise ValueError(f"Multiple models with the name '{model_name}' were found")
             model = models[0]
@@ -398,15 +408,22 @@ class TestRunner:
             service_name, service_info = self._get_key_value(entity_dict=service_entity)
             source_app = service_info.get("source_app", None)
 
-            # Get service app
-            app = self.test_resources.apps.get(source_app, None)
+            # Service created by dependency
+            if source_app is None:
+                services = self.test_utils.get_services(component_name=service_name)
+            # Service created by current installed apps
+            else:
+                # Get service app
+                app = self.test_resources.apps.get(source_app, None)
+
+                # Validations
+                if app is None:
+                    raise ValueError(f"App '{source_app}' was not found")
+
+                # Find service in services
+                services = self.test_utils.get_services(app=app, component_name=service_name)
 
             # Validations
-            if app is None:
-                raise ValueError(f"App '{source_app}' was not found")
-
-            # Find service in services
-            services = self.test_utils.get_services(app=app, component_name=service_name)
             if len(services) > 1:
                 raise ValueError(f"Multiple services with the name '{service_name}' were found")
             service = services[0]
@@ -415,7 +432,7 @@ class TestRunner:
     def _prepare_pipelines(self):
         for pipeline_entity in self.test_utils.config_yaml.get("pipelines", list()):
             pipeline_template_dpk_name, pipeline_info = self._get_key_value(entity_dict=pipeline_entity)
-            install_pipeline = pipeline_info.get("install_pipeline", None)
+            install_pipeline = pipeline_info.get("install_pipeline", False)
 
             # Validations
             if not isinstance(install_pipeline, bool):
