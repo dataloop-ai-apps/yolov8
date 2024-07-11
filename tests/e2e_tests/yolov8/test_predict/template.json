@@ -12,6 +12,17 @@
         "portId": "9a717ca3-bd33-4f3d-92fa-737fd03b8828"
       },
       "condition": "{}"
+    },
+    {
+      "src": {
+        "nodeId": "002db81a-5f34-418d-b780-9928aee7468f",
+        "portId": "00312e63-7345-4939-a9f7-ff2be2f62abf"
+      },
+      "tgt": {
+        "nodeId": "836573b1-5fc2-4a49-b605-087a4fae7370",
+        "portId": "3155b3a1-98c7-4b7a-bc67-39632ca420c3"
+      },
+      "condition": "{}"
     }
   ],
   "startNodes": [
@@ -31,6 +42,12 @@
       "name": "dataset",
       "type": "Dataset",
       "description": null
+    },
+    {
+      "name": "label",
+      "type": "String",
+      "description": null,
+      "value": "car"
     }
   ],
   "description": "",
@@ -140,8 +157,60 @@
         },
         "repeatable": true
       }
+    },
+    {
+      "id": "836573b1-5fc2-4a49-b605-087a4fae7370",
+      "inputs": [
+        {
+          "portId": "3155b3a1-98c7-4b7a-bc67-39632ca420c3",
+          "nodeId": "3155b3a1-98c7-4b7a-bc67-39632ca420c3",
+          "type": "Item",
+          "name": "item",
+          "displayName": "item",
+          "io": "input"
+        },
+        {
+          "portId": "c12a3c92-9bd3-4e32-8c9b-56da18c8c8a7",
+          "nodeId": "c12a3c92-9bd3-4e32-8c9b-56da18c8c8a7",
+          "type": "String",
+          "name": "label",
+          "displayName": "label",
+          "variableName": "label",
+          "io": "input"
+        }
+      ],
+      "outputs": [
+      ],
+      "name": "postprocess",
+      "type": "code",
+      "namespace": {
+        "functionName": "run",
+        "projectName": null,
+        "serviceName": "",
+        "moduleName": null,
+        "packageName": ""
+      },
+      "projectId": null,
+      "config": {
+        "package": {
+          "code": "import dtlpy as dl\n\nclass ServiceRunner:\n    @staticmethod\n    def run(item: dl.Item, label: str):\n        annotations = item.annotations.list()\n        for annotation in annotations:\n            if annotation.label != label:\n                raise ValueError(f\"Expected the model to predict: {label}, but got: {annotation.label} instead\")\n",
+          "name": "run",
+          "type": "code",
+          "codebase": {
+            "type": "item"
+          }
+        }
+      },
+      "metadata": {
+        "position": {
+          "x": 15000.0,
+          "y": 10000.0,
+          "z": 0
+        },
+        "repeatable": true
+      }
     }
   ],
-  "preview": "66852d8111504c8efe38f927",
-  "_id": "66852deb11504cee2638fa95"
+  "preview": "668fc188db90ed5a18091f40",
+  "_id": "668fc934db90ed5698092958"
 }
