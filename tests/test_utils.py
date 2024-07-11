@@ -358,6 +358,15 @@ class TestRunner:
             # Dataset created by dependency
             if source_app is None:
                 datasets = self.test_utils.get_datasets(component_name=dataset_name)
+
+                # Validations
+                if len(datasets) > 1:
+                    raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
+                dataset = datasets[0]
+
+                # Add dataset app to test resources
+                app = self.project.apps.get(app_id=dataset.metadata['system']['app']['id'])
+                self.test_resources.apps.update({app.name: app})
             # Dataset created by current installed apps
             else:
                 # Get dataset app
@@ -370,10 +379,11 @@ class TestRunner:
                 # Find dataset in datasets
                 datasets = self.test_utils.get_datasets(app=app, component_name=dataset_name)
 
-            # Validations
-            if len(datasets) > 1:
-                raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
-            dataset = datasets[0]
+                # Validations
+                if len(datasets) > 1:
+                    raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
+                dataset = datasets[0]
+
             self.test_resources.datasets.update({dataset_name: dataset})
 
     def _prepare_models(self):
@@ -389,6 +399,15 @@ class TestRunner:
             # Model created by dependency
             if source_app is None:
                 models = self.test_utils.get_models(component_name=model_name)
+
+                # Validations
+                if len(models) > 1:
+                    raise ValueError(f"Multiple models with the name '{model_name}' were found")
+                model = models[0]
+
+                # Add model app to test resources
+                app = self.project.apps.get(app_id=model.metadata['system']['app']['id'])
+                self.test_resources.apps.update({app.name: app})
             # Model created by current installed apps
             else:
                 # Get model app
@@ -401,10 +420,11 @@ class TestRunner:
                 # Find model in models
                 models = self.test_utils.get_models(app=app, component_name=model_name)
 
-            # Validations
-            if len(models) > 1:
-                raise ValueError(f"Multiple models with the name '{model_name}' were found")
-            model = models[0]
+                # Validations
+                if len(models) > 1:
+                    raise ValueError(f"Multiple models with the name '{model_name}' were found")
+                model = models[0]
+
             self.test_resources.models.update({model_name: model})
 
     def _prepare_services(self):
@@ -415,6 +435,15 @@ class TestRunner:
             # Service created by dependency
             if source_app is None:
                 services = self.test_utils.get_services(component_name=service_name)
+
+                # Validations
+                if len(services) > 1:
+                    raise ValueError(f"Multiple services with the name '{service_name}' were found")
+                service = services[0]
+
+                # Add service app to test resources
+                app = self.project.apps.get(app_id=service.metadata['system']['app']['id'])
+                self.test_resources.apps.update({app.name: app})
             # Service created by current installed apps
             else:
                 # Get service app
@@ -427,10 +456,11 @@ class TestRunner:
                 # Find service in services
                 services = self.test_utils.get_services(app=app, component_name=service_name)
 
-            # Validations
-            if len(services) > 1:
-                raise ValueError(f"Multiple services with the name '{service_name}' were found")
-            service = services[0]
+                # Validations
+                if len(services) > 1:
+                    raise ValueError(f"Multiple services with the name '{service_name}' were found")
+                service = services[0]
+
             self.test_resources.services.update({service_name: service})
 
     def _prepare_pipelines(self):
