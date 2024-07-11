@@ -345,15 +345,20 @@ class TestRunner:
         # Reverse dpks order
         self.dpks_creation_order.reverse()
 
-    def _prepare_datasets(self):
+    def _prepare_local_datasets(self):
+        for dataset_name in self.test_utils.config_yaml.get("local_datasets", list()):
+            dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
+            self.test_resources.datasets.update({dataset_name: dataset})
+
+    def _prepare_remote_datasets(self):
         for dataset_entity in self.test_utils.config_yaml.get("datasets", list()):
             dataset_name, dataset_info = self._get_key_value(entity_dict=dataset_entity)
             source_app = dataset_info.get("source_app", None)
 
-            # Local dataset
+            # Dataset created by dependency
             if source_app is None:
-                dataset = self.test_utils.create_dataset(dataset_name=dataset_name)
-            # Remote dataset
+                datasets = self.test_utils.get_datasets(component_name=dataset_name)
+            # Dataset created by current installed apps
             else:
                 # Get dataset app
                 app = self.test_resources.apps.get(source_app, None)
@@ -365,11 +370,10 @@ class TestRunner:
                 # Find dataset in datasets
                 datasets = self.test_utils.get_datasets(app=app, component_name=dataset_name)
 
-                # Validations
-                if len(datasets) > 1:
-                    raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
-                dataset = datasets[0]
-
+            # Validations
+            if len(datasets) > 1:
+                raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
+            dataset = datasets[0]
             self.test_resources.datasets.update({dataset_name: dataset})
 
     def _prepare_models(self):
@@ -453,7 +457,8 @@ class TestRunner:
 
     def setup(self):
         self._prepare_dpks_and_apps()
-        self._prepare_datasets()
+        self._prepare_local_datasets()
+        self._prepare_remote_datasets()
         self._prepare_models()
         self._prepare_services()
         self._prepare_pipelines()
