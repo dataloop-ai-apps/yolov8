@@ -171,9 +171,9 @@ class TestUtils:
         # Build filters
         filters = dl.Filters(resource=filters_resource)
         if dpk is not None:
-            filters.add(field="metadata.system.app.dpkId", values=dpk.id)
+            filters.add(field="app.dpkId", values=dpk.id)
         if app is not None:
-            filters.add(field="metadata.system.app.id", values=app.id)
+            filters.add(field="app.id", values=app.id)
         if component_name is not None:
             filters.add(field="app.componentName", values=component_name)
         return filters
