@@ -187,11 +187,6 @@ class TestUtils:
 
         # Get datasets
         datasets = self.project.datasets.list(filters=filters)
-
-        # Validations
-        if len(datasets) == 0:
-            raise ValueError("No Datasets were found")
-
         if isinstance(datasets, dl.entities.PagedEntities):
             datasets = list(datasets.all())
         return datasets
@@ -205,11 +200,6 @@ class TestUtils:
 
         # Get models
         models = self.project.models.list(filters=filters)
-
-        # Validations
-        if len(models) == 0:
-            raise ValueError("No models were found")
-
         if isinstance(models, dl.entities.PagedEntities):
             models = list(models.all())
         return models
@@ -223,11 +213,6 @@ class TestUtils:
 
         # Get service
         services = self.project.models.list(filters=filters)
-
-        # Validations
-        if len(services) == 0:
-            raise ValueError("No services were found")
-
         if isinstance(services, dl.entities.PagedEntities):
             services = list(services.all())
         return services
@@ -360,8 +345,9 @@ class TestRunner:
                 datasets = self.test_utils.get_datasets(component_name=dataset_name)
 
                 # Validations
-                if len(datasets) > 1:
-                    raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
+                count = len(datasets)
+                if count != 1:
+                    raise ValueError(f"Expected 1 result for dataset name '{dataset_name}', but {count} were found")
                 dataset = datasets[0]
 
                 # Add dataset app to test resources
@@ -380,8 +366,9 @@ class TestRunner:
                 datasets = self.test_utils.get_datasets(app=app, component_name=dataset_name)
 
                 # Validations
-                if len(datasets) > 1:
-                    raise ValueError(f"Multiple datasets with the name '{dataset_name}' were found")
+                count = len(datasets)
+                if count != 1:
+                    raise ValueError(f"Expected 1 result for dataset name '{dataset_name}', but {count} were found")
                 dataset = datasets[0]
 
             self.test_resources.datasets.update({dataset_name: dataset})
@@ -401,8 +388,9 @@ class TestRunner:
                 models = self.test_utils.get_models(component_name=model_name)
 
                 # Validations
-                if len(models) > 1:
-                    raise ValueError(f"Multiple models with the name '{model_name}' were found")
+                count = len(models)
+                if count != 1:
+                    raise ValueError(f"Expected 1 result for model name '{model_name}', but {count} were found")
                 model = models[0]
 
                 # Add model app to test resources
@@ -421,8 +409,9 @@ class TestRunner:
                 models = self.test_utils.get_models(app=app, component_name=model_name)
 
                 # Validations
-                if len(models) > 1:
-                    raise ValueError(f"Multiple models with the name '{model_name}' were found")
+                count = len(models)
+                if count != 1:
+                    raise ValueError(f"Expected 1 result for model name '{model_name}', but {count} were found")
                 model = models[0]
 
             self.test_resources.models.update({model_name: model})
@@ -437,8 +426,9 @@ class TestRunner:
                 services = self.test_utils.get_services(component_name=service_name)
 
                 # Validations
-                if len(services) > 1:
-                    raise ValueError(f"Multiple services with the name '{service_name}' were found")
+                count = len(services)
+                if count != 1:
+                    raise ValueError(f"Expected 1 result for service name '{service_name}', but {count} were found")
                 service = services[0]
 
                 # Add service app to test resources
@@ -457,8 +447,9 @@ class TestRunner:
                 services = self.test_utils.get_services(app=app, component_name=service_name)
 
                 # Validations
-                if len(services) > 1:
-                    raise ValueError(f"Multiple services with the name '{service_name}' were found")
+                count = len(services)
+                if count != 1:
+                    raise ValueError(f"Expected 1 result for service name '{service_name}', but {count} were found")
                 service = services[0]
 
             self.test_resources.services.update({service_name: service})
@@ -500,14 +491,14 @@ class TestRunner:
         for pipeline in self.test_resources.pipelines.values():
             pipeline.delete()
 
-        model: dl.Model
-        for model in self.test_resources.models.values():
-            model.delete()
-
         app: dl.App
         for app_name in self.dpks_creation_order:
             app = self.test_resources.apps.get(app_name, None)
             if app is not None:
+                # Delete all app related models
+                models = self.test_utils.get_models(app=app)
+                for model in models:
+                    model.delete()
                 app.uninstall()
 
         dpk: dl.Dpk
