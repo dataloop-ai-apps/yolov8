@@ -500,6 +500,10 @@ class TestRunner:
         for pipeline in self.test_resources.pipelines.values():
             pipeline.delete()
 
+        model: dl.Model
+        for model in self.test_resources.models.values():
+            model.delete()
+
         app: dl.App
         for app_name in self.dpks_creation_order:
             app = self.test_resources.apps.get(app_name, None)
