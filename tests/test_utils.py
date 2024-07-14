@@ -212,7 +212,7 @@ class TestUtils:
         )
 
         # Get service
-        services = self.project.models.list(filters=filters)
+        services = self.project.services.list(filters=filters)
         if isinstance(services, dl.entities.PagedEntities):
             services = list(services.all())
         return services
