@@ -19,7 +19,8 @@ class ItemTypes(enum.Enum):
 class MyTestCase(unittest.TestCase):
     project: dl.Project = None
     dataset: dl.Dataset = None
-    assets_folder: str = os.path.join('dataloop_tests', 'assets', 'datasets', 'unittest')
+    assets_folder: str = os.path.join('tests', 'assets', 'unittest')
+    dataset_folder: str = os.path.join(assets_folder, 'datasets', 'example_data')
     prepare_item_function = dict()
 
     @classmethod
@@ -56,7 +57,7 @@ class MyTestCase(unittest.TestCase):
 
     # Item preparation functions
     def _prepare_image_item(self, item_name: str):
-        local_path = os.path.join(self.assets_folder, 'example_data', item_name)
+        local_path = os.path.join(self.dataset_folder, item_name)
         item = self.dataset.items.upload(
             local_path=local_path,
             overwrite=True

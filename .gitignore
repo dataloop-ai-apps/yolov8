@@ -288,4 +288,4 @@ debugs
 dataloop_scripts
 
 # Tests stuff
-!tests/assets/**
+!tests/**

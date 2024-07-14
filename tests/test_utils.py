@@ -27,7 +27,7 @@ class TestUtils:
         # Paths
         self.root_path = root_path
         self.test_path = test_path
-        self.datasets_path = os.path.join(self.root_path, 'tests', 'assets', 'datasets', 'e2e_tests')
+        self.datasets_path = os.path.join(self.root_path, 'tests', 'assets', 'e2e_tests', 'datasets')
         self._setup()
 
     def _setup(self):
