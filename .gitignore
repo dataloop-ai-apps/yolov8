@@ -286,3 +286,6 @@ runs
 weights
 debugs
 dataloop_scripts
+
+# Tests stuff
+!tests/**
