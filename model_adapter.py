@@ -3,6 +3,7 @@ from ultralytics import YOLO
 from PIL import Image
 
 import dtlpy as dl
+import numpy as np
 import logging
 import torch
 import PIL
@@ -174,10 +175,12 @@ class Adapter(dl.BaseModelAdapter):
             samples = list()
             for metric_name, value in metrics.items():
                 legend, figure = metric_name.split('/')
-                samples.append(dl.PlotSample(figure=figure,
-                                             legend=legend,
-                                             x=self.current_epoch,
-                                             y=value))
+                if np.isfinite(value):
+                    samples.append(dl.PlotSample(figure=figure,
+                                                 legend=legend,
+                                                 x=self.current_epoch,
+                                                 y=value))
+            logger.info(f'Updating figure {figure} with legend {legend} with value {value}')
             self.model_entity.metrics.create(samples=samples, dataset_id=self.model_entity.dataset_id)
             # save model output after each epoch end
             self.configuration['start_epoch'] = self.current_epoch + 1
