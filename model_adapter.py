@@ -7,6 +7,7 @@ import logging
 import torch
 import PIL
 import os
+import numpy as np
 
 logger = logging.getLogger('YOLOv8Adapter')
 
@@ -172,8 +173,28 @@ class Adapter(dl.BaseModelAdapter):
             if faas_callback is not None:
                 faas_callback(self.current_epoch, epochs)
             samples = list()
+            NaN_dict = {'box_loss': 1,
+                        'cls_loss': 1,
+                        'dfl_loss': 1,
+                        'mAP50(B)': 0,
+                        'mAP50-95(B)': 0,
+                        'precision(B)': 0,
+                        'recall(B)': 0}
             for metric_name, value in metrics.items():
                 legend, figure = metric_name.split('/')
+                logger.info(f'Updating figure {figure} with legend {legend} with value {value}')
+                if not np.isfinite(value):
+                    filters = dl.Filters(resource=dl.FiltersResource.METRICS)
+                    filters.add(field='modelId', values=self.model_entity.id)
+                    filters.add(field='figure', values=figure)
+                    filters.add(field='data.x', values=self.current_epoch - 1)
+                    items = self.model_entity.metrics.list(filters=filters)
+
+                    if items.items_count > 0:
+                        value = items.items[0].y
+                    else:
+                        value = NaN_dict.get(figure, 0)
+                    logger.warning(f'Value is not finite. For figure {figure} and legend {legend} using value {value}')
                 samples.append(dl.PlotSample(figure=figure,
                                              legend=legend,
                                              x=self.current_epoch,
