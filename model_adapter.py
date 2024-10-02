@@ -76,74 +76,16 @@ class Adapter(dl.BaseModelAdapter):
                                     from_format='dataloop')
 
     def load(self, local_path, **kwargs):
-        model_filename = self.configuration.get('weights_filename', 'yolov9e.pt')
-        model_filepath = os.path.join(local_path, model_filename)
-
-        if os.path.isfile(model_filepath):
+        model_filename = self.configuration.get('weights_filename', 'yolov8l.pt')
+        model_filepath = os.path.join(local_path, model_filename) if model_filename not in DEFAULT_WEIGHTS \
+            else model_filename
+        # first load official model -https://github.com/ultralytics/ultralytics/issues/3856
+        _ = YOLO('yolov8l.pt')
+        if model_filename in DEFAULT_WEIGHTS or os.path.isfile(model_filepath):
             model = YOLO(model_filepath)  # pass any model type
         else:
-            logger.warning(f'Model path ({model_filepath}) not found! loading default model weights')
-            url = 'https://github.com/ultralytics/assets/releases/download/v8.2.0/' + model_filename
-            model = YOLO(url)  # pass any model type
+            raise dl.exceptions.NotFound(f'Model path ({model_filepath}) not found!')
         self.model = model
-
-    def prepare_item_func(self, item):
-        filename = item.download(overwrite=True)
-        image = Image.open(filename)
-        # Check if the image has EXIF data
-        if hasattr(image, '_getexif'):
-            exif_data = image._getexif()
-            # Get the EXIF orientation tag (if available)
-            if exif_data is not None:
-                orientation = exif_data.get(0x0112)
-                if orientation is not None:
-                    # Rotate the image based on the orientation tag
-                    if orientation == 3:
-                        image = image.rotate(180, expand=True)
-                    elif orientation == 6:
-                        image = image.rotate(270, expand=True)
-                    elif orientation == 8:
-                        image = image.rotate(90, expand=True)
-        image = image.convert('RGB')
-        return image
-
-    def predict(self, batch, **kwargs):
-        results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
-        batch_annotations = list()
-        for i_img, res in enumerate(results):  # per image
-            image_annotations = dl.AnnotationCollection()
-            for d in reversed(res.boxes):
-                cls, conf = d.cls.squeeze(), d.conf.squeeze()
-                c = int(cls)
-                label = res.names[c]
-                xyxy = d.xyxy.squeeze()
-                image_annotations.add(annotation_definition=dl.Box(left=float(xyxy[0]),
-                                                                   top=float(xyxy[1]),
-                                                                   right=float(xyxy[2]),
-                                                                   bottom=float(xyxy[3]),
-                                                                   label=label
-                                                                   ),
-                                      model_info={'name': self.model_entity.name,
-                                                  'model_id': self.model_entity.id,
-                                                  'confidence': float(conf)})
-            batch_annotations.append(image_annotations)
-        return batch_annotations
-
-    @staticmethod
-    def copy_files(src_path, dst_path):
-        subfolders = [x[0] for x in os.walk(src_path)]
-        os.makedirs(dst_path, exist_ok=True)
-
-        for subfolder in subfolders:
-            for filename in os.listdir(subfolder):
-                file_path = os.path.join(subfolder, filename)
-                if os.path.isfile(file_path):
-                    # Get the relative path from the source directory
-                    relative_path = os.path.relpath(subfolder, src_path)
-                    # Create a new file name with the relative path included
-                    new_filename = f"{relative_path.replace(os.sep, '_')}_{filename}"
-                    new_file_path = os.path.join(dst_path, new_filename)
-                    shutil.copy(file_path, new_file_path)
 
     def train(self, data_path, output_path, **kwargs):
         self.model.model.args.update(self.configuration.get('modelArgs', dict()))
@@ -258,3 +200,149 @@ class Adapter(dl.BaseModelAdapter):
                          auto_augment=auto_augment,
                          degrees=degrees,
                          lr0=lr0)
+
+    def prepare_item_func(self, item):
+        filename = item.download(overwrite=True)
+        image = Image.open(filename)
+        # Check if the image has EXIF data
+        if hasattr(image, '_getexif'):
+            exif_data = image._getexif()
+            # Get the EXIF orientation tag (if available)
+            if exif_data is not None:
+                orientation = exif_data.get(0x0112)
+                if orientation is not None:
+                    # Rotate the image based on the orientation tag
+                    if orientation == 3:
+                        image = image.rotate(180, expand=True)
+                    elif orientation == 6:
+                        image = image.rotate(270, expand=True)
+                    elif orientation == 8:
+                        image = image.rotate(90, expand=True)
+        image = image.convert('RGB')
+        return image
+
+    def predict(self, batch, **kwargs):
+        results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
+        batch_annotations = list()
+        for i_img, res in enumerate(results):  # per image
+            image_annotations = dl.AnnotationCollection()
+            for d in reversed(res.boxes):
+                cls, conf = d.cls.squeeze(), d.conf.squeeze()
+                c = int(cls)
+                label = res.names[c]
+                xyxy = d.xyxy.squeeze()
+                image_annotations.add(annotation_definition=dl.Box(left=float(xyxy[0]),
+                                                                   top=float(xyxy[1]),
+                                                                   right=float(xyxy[2]),
+                                                                   bottom=float(xyxy[3]),
+                                                                   label=label
+                                                                   ),
+                                      model_info={'name': self.model_entity.name,
+                                                  'model_id': self.model_entity.id,
+                                                  'confidence': float(conf)})
+            batch_annotations.append(image_annotations)
+        return batch_annotations
+
+    @staticmethod
+    def copy_files(src_path, dst_path):
+        subfolders = [x[0] for x in os.walk(src_path)]
+        os.makedirs(dst_path, exist_ok=True)
+
+        for subfolder in subfolders:
+            for filename in os.listdir(subfolder):
+                file_path = os.path.join(subfolder, filename)
+                if os.path.isfile(file_path):
+                    # Get the relative path from the source directory
+                    relative_path = os.path.relpath(subfolder, src_path)
+                    # Create a new file name with the relative path included
+                    new_filename = f"{relative_path.replace(os.sep, '_')}_{filename}"
+                    new_file_path = os.path.join(dst_path, new_filename)
+                    shutil.copy(file_path, new_file_path)
+
+    def export(self):
+        model = YOLO("model.pt")
+        model.fuse()
+        model.info(verbose=True)  # Print model information
+        model.export(format='')  # TODO:
+
+
+def package_creation(project: dl.Project):
+    metadata = dl.Package.get_ml_metadata(cls=Adapter,
+                                          default_configuration={'weights_filename': 'yolov8n.pt',
+                                                                 'epochs': 10,
+                                                                 'batch_size': 4,
+                                                                 'imgsz': 640,
+                                                                 'conf_thres': 0.25,
+                                                                 'iou_thres': 0.45,
+                                                                 'max_det': 1000},
+                                          output_type=dl.AnnotationType.BOX,
+                                          )
+    modules = dl.PackageModule.from_entry_point(entry_point='model_adapter.py')
+
+    package = project.packages.push(package_name='yolov8',
+                                    src_path=os.getcwd(),
+                                    # description='Global Dataloop Yolo V8 implementation in pytorch',
+                                    is_global=True,
+                                    package_type='ml',
+                                    codebase=dl.GitCodebase(git_url='https://github.com/dataloop-ai-apps/yolov8.git',
+                                                            git_tag='v0.1.20'),
+                                    modules=[modules],
+                                    service_config={
+                                        'runtime': dl.KubernetesRuntime(pod_type=dl.INSTANCE_CATALOG_REGULAR_M,
+                                                                        runner_image='ultralytics/ultralytics:8.0.183',
+                                                                        autoscaler=dl.KubernetesRabbitmqAutoscaler(
+                                                                            min_replicas=0,
+                                                                            max_replicas=1),
+                                                                        preemptible=False,
+                                                                        concurrency=1).to_json(),
+                                        'executionTimeout': 10000 * 3600,
+                                        'initParams': {'model_entity': None}
+                                    },
+                                    metadata=metadata)
+    return package
+
+
+def model_creation(package: dl.Package):
+    import ultralytics
+    labels = ultralytics.YOLO().names
+
+    model = package.models.create(model_name='pretrained-yolo-v8',
+                                  description='yolo v8 arch, pretrained on ms-coco',
+                                  tags=['yolov8', 'pretrained', 'ms-coco'],
+                                  dataset_id=None,
+                                  status='trained',
+                                  scope='public',
+                                  # scope='project',
+                                  configuration={
+                                      'weights_filename': 'yolov8n.pt',
+                                      'imgz': 640,
+                                      'id_to_label_map': labels},
+                                  project_id=package.project.id,
+                                  labels=list(labels.values()),
+                                  input_type='image',
+                                  output_type='box'
+                                  )
+    return model
+
+
+def deploy():
+    dl.setenv('rc')
+    project_name = 'DataloopModels'
+    project = dl.projects.get(project_name)
+    # project = dl.projects.get(project_id='0ebbf673-17a7-469c-bcb2-f00fdaedfc8b')
+    package = package_creation(project=project)
+    print(f'new mode pushed. codebase: {package.codebase}')
+    # model = model_creation(package=package)
+    # model_entity = package.models.list().print()
+    # print(f'model and package deployed. package id: {package.id}, model id: {model_entity.id}')
+
+
+if __name__ == "__main__":
+    # deploy()
+    ...
+    # test_predict()
+
+    # package.artifacts.list()
+    # test()
+
+    # model_creation(package=package)
