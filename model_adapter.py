@@ -95,6 +95,10 @@ class Adapter(dl.BaseModelAdapter):
         device = self.configuration.get('device', None)
         augment = self.configuration.get('augment', True)
         yaml_config = self.configuration.get('yaml_config', dict())
+        lr0 = self.configuration.get('lr0', 0.01)
+        auto_augment = self.configuration.get('auto_augment', 'randaugment')
+        degrees = self.configuration.get('degrees', 0.0)
+
         resume = start_epoch > 0
         if device is None:
             device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -217,7 +221,10 @@ class Adapter(dl.BaseModelAdapter):
                          name=name,
                          workers=0,
                          imgsz=imgsz,
-                         project=project_name)
+                         project=project_name,
+                         auto_augment=auto_augment,
+                         degrees=degrees,
+                         lr0=lr0)
 
     def prepare_item_func(self, item):
         filename = item.download(overwrite=True)
