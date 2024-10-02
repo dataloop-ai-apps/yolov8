@@ -24,7 +24,7 @@
         "runtime": {
           "podType": "regular-m",
           "concurrency": 1,
-          "runnerImage": "dataloop_runner-gpu/ultralytics:8.0.183",
+          "runnerImage": "ultralytics/ultralytics:8.2.26-python",
           "autoscaler": {
             "type": "rabbitmq",
             "minReplicas": 0,
@@ -38,7 +38,7 @@
         "runtime": {
           "podType": "gpu-t4",
           "concurrency": 1,
-          "runnerImage": "dataloop_runner-gpu/ultralytics:8.0.183",
+          "runnerImage": "gcr.io/viewo-g/piper/agent/gpu/yolov9:0.0.1",
           "autoscaler": {
             "type": "rabbitmq",
             "minReplicas": 0,
@@ -109,16 +109,16 @@
               }
             ],
             "output": [
-               {
-                 "type": "Item[]",
-                 "name": "items",
-                 "description": "The same input images for prediction."
-               },
-               {
-                 "type": "Annotation[]",
-                 "name": "annotations",
-                 "description": "The predicted annotations."
-               }
+              {
+                "type": "Item[]",
+                "name": "items",
+                "description": "The same input images for prediction."
+              },
+              {
+                "type": "Annotation[]",
+                "name": "annotations",
+                "description": "The predicted annotations."
+              }
             ],
             "displayName": "Predict Items",
             "displayIcon": "",
@@ -267,7 +267,8 @@
           "hair drier",
           "toothbrush"
         ]
-      },      {
+      },
+      {
         "name": "yolov8-large",
         "moduleName": "yolov8-module",
         "scope": "project",
