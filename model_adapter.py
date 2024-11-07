@@ -219,7 +219,10 @@ class Adapter(dl.BaseModelAdapter):
         return image
 
     def predict(self, batch, **kwargs):
-        results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
+        device = self.configuration.get('device', None)
+        if device is None:
+            device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        results = self.model.predict(source=batch, save=False, save_txt=False, device=device)  # save predictions as labels
         batch_annotations = list()
         for i_img, res in enumerate(results):  # per image
             image_annotations = dl.AnnotationCollection()
