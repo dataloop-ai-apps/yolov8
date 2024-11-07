@@ -225,6 +225,8 @@ class Adapter(dl.BaseModelAdapter):
         for stream, item in batch:
             if 'image' in item.mimetype:
                 filtered_streams.append(stream)
+            else:
+                logger.warning(f'Item {item.id} mimetype is not supported. Skipping item prediction')
 
         device = self.configuration.get('device', None)
         if device is None:
