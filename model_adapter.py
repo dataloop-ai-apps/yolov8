@@ -216,6 +216,7 @@ class Adapter(dl.BaseModelAdapter):
                             data = data.rotate(270, expand=True)
                         elif orientation == 8:
                             data = data.rotate(90, expand=True)
+            data = data.convert('RGB')
         else:
             data = filename
         return data, item
