@@ -227,7 +227,7 @@ class Adapter(dl.BaseModelAdapter):
             else:
                 logger.warning(f'Item {item.id} mimetype is not supported. Skipping item prediction')
 
-        results = self.model.predict(source=filtered_streams, save=False, save_txt=False, device=device)  # save predictions as labels
+        results = self.model.predict(source=filtered_streams, save=False, save_txt=False)  # save predictions as labels
         batch_annotations = list()
         for i_img, res in enumerate(results):  # per image
             image_annotations = dl.AnnotationCollection()
