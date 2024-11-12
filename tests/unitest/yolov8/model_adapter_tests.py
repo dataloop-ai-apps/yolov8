@@ -103,7 +103,7 @@ class MyTestCase(unittest.TestCase):
     def test_yolov8(self):
         item_name = "car_image.jpeg"
         item_type = ItemTypes.IMAGE
-        predicted_annotations = self._perform_model_predict(item_type=item_type, item_name=item_name, model_index=1)
+        predicted_annotations = self._perform_model_predict(item_type=item_type, item_name=item_name, model_index=0)
         self.assertTrue(isinstance(predicted_annotations, list) and len(predicted_annotations) > 0)
         car_annotation = self.dataset.annotations.get(annotation_id=predicted_annotations[0]["annotation_id"])
         self.assertTrue(car_annotation.type == dl.AnnotationType.BOX and car_annotation.label == "car")
