@@ -76,6 +76,7 @@ class Adapter(dl.BaseModelAdapter):
 
     def load(self, local_path, **kwargs):
         model_filename = self.configuration.get('weights_filename', 'yolov8l.pt')
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         model_filepath = os.path.join(local_path, model_filename) if model_filename not in DEFAULT_WEIGHTS \
             else model_filename
         # first load official model -https://github.com/ultralytics/ultralytics/issues/3856
@@ -84,6 +85,8 @@ class Adapter(dl.BaseModelAdapter):
             model = YOLO(model_filepath)  # pass any model type
         else:
             raise dl.exceptions.NotFound(f'Model path ({model_filepath}) not found!')
+        model.to(device=device)
+        logger.info(f"Model loaded successfully, Device: {model.device}")
         self.model = model
 
     def train(self, data_path, output_path, **kwargs):
@@ -92,12 +95,9 @@ class Adapter(dl.BaseModelAdapter):
         start_epoch = self.configuration.get('start_epoch', 0)
         batch_size = self.configuration.get('batch_size', 2)
         imgsz = self.configuration.get('imgsz', 640)
-        device = self.configuration.get('device', None)
         augment = self.configuration.get('augment', True)
         yaml_config = self.configuration.get('yaml_config', dict())
         resume = start_epoch > 0
-        if device is None:
-            device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         project_name = os.path.dirname(output_path)
         name = os.path.basename(output_path)
@@ -212,7 +212,6 @@ class Adapter(dl.BaseModelAdapter):
                          resume=resume,
                          epochs=epochs,
                          batch=batch_size,
-                         device=device,
                          augment=augment,
                          name=name,
                          workers=0,
@@ -221,26 +220,36 @@ class Adapter(dl.BaseModelAdapter):
 
     def prepare_item_func(self, item):
         filename = item.download(overwrite=True)
-        image = Image.open(filename)
-        # Check if the image has EXIF data
-        if hasattr(image, '_getexif'):
-            exif_data = image._getexif()
-            # Get the EXIF orientation tag (if available)
-            if exif_data is not None:
-                orientation = exif_data.get(0x0112)
-                if orientation is not None:
-                    # Rotate the image based on the orientation tag
-                    if orientation == 3:
-                        image = image.rotate(180, expand=True)
-                    elif orientation == 6:
-                        image = image.rotate(270, expand=True)
-                    elif orientation == 8:
-                        image = image.rotate(90, expand=True)
-        image = image.convert('RGB')
-        return image
+        if 'image' in item.mimetype:
+            data = Image.open(filename)
+            # Check if the image has EXIF data
+            if hasattr(data, '_getexif'):
+                exif_data = data._getexif()
+                # Get the EXIF orientation tag (if available)
+                if exif_data is not None:
+                    orientation = exif_data.get(0x0112)
+                    if orientation is not None:
+                        # Rotate the image based on the orientation tag
+                        if orientation == 3:
+                            data = data.rotate(180, expand=True)
+                        elif orientation == 6:
+                            data = data.rotate(270, expand=True)
+                        elif orientation == 8:
+                            data = data.rotate(90, expand=True)
+            data = data.convert('RGB')
+        else:
+            data = filename
+        return data, item
 
     def predict(self, batch, **kwargs):
-        results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
+        filtered_streams = list()
+        for stream, item in batch:
+            if 'image' in item.mimetype:
+                filtered_streams.append(stream)
+            else:
+                logger.warning(f'Item {item.id} mimetype is not supported. Skipping item prediction')
+
+        results = self.model.predict(source=filtered_streams, save=False, save_txt=False)  # save predictions as labels
         batch_annotations = list()
         for i_img, res in enumerate(results):  # per image
             image_annotations = dl.AnnotationCollection()
