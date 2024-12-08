@@ -59,13 +59,13 @@
           "io": "output"
         }
       ],
-      "name": "YOLOv8 Train",
+      "name": "Train",
       "type": "ml",
       "namespace": {
         "functionName": "train",
         "projectName": null,
         "serviceName": "model-mgmt-app-train",
-        "moduleName": "yolov8-module",
+        "moduleName": "model-mgmt-app-train",
         "packageName": "model-mgmt-app"
       },
       "projectId": null,
