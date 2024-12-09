@@ -241,12 +241,15 @@ class Adapter(dl.BaseModelAdapter):
 
     def predict(self, batch, **kwargs):
         results = self.model.predict(source=batch, save=False, save_txt=False)  # save predictions as labels
+        confidence_threshold = self.configuration.get("conf_thres", 0.25)
         batch_annotations = list()
         for i_img, res in enumerate(results):  # per image
             image_annotations = dl.AnnotationCollection()
             for d in reversed(res.boxes):
                 cls, conf = d.cls.squeeze(), d.conf.squeeze()
                 c = int(cls)
+                if conf < confidence_threshold:
+                    continue
                 label = res.names[c]
                 xyxy = d.xyxy.squeeze()
                 image_annotations.add(annotation_definition=dl.Box(left=float(xyxy[0]),
