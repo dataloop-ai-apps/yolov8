@@ -1,25 +1,26 @@
 # ordered list of dpks to publish and install
 dpks:
-    - yolov8:
-        install_app: True
+    - name: yolov8
+      install_app: True
 
 # ordered list of datasets to create from local assets
-local_datasets:
-    - test_dataset
+datasets:
+    - name: test_dataset
+      type: local
 
 # ordered list of models to get from apps
 models:
-    - yolov8:
-        deploy_model: False
-        source_app: yolov8
+    - name: yolov8
+      deploy_model: False
+      source_app: yolov8
 
 # list of pipeline variables to update with reference
 variables:
-    dataset:
-        test_dataset:
-            resource_type: datasets
-            entity_field: id
-    model:
-        yolov8:
-            resource_type: models
-            entity_field: id
+    - name: dataset
+      resource_type: datasets
+      resource_value:
+          resource_name: test_dataset
+    - name: model
+      resource_type: models
+      resource_value:
+          resource_name: yolov8
