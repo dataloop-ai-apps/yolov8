@@ -3,7 +3,7 @@ dpks:
     - name: yolov8
       install_app: True
 
-# ordered list of datasets to create from local assets
+# ordered list of datasets to create from local assets or to get from installed apps
 datasets:
     - name: test_dataset
       type: local
