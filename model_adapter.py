@@ -218,6 +218,9 @@ class Adapter(dl.BaseModelAdapter):
                          workers=0,
                          imgsz=imgsz,
                          project=project_name)
+        if 'start_epoch' in self.configuration and self.configuration['start_epoch'] == epochs:
+            self.model_entity.configuration['start_epoch'] = 0
+            self.model_entity.update()
 
     def prepare_item_func(self, item):
         filename = item.download(overwrite=True)
