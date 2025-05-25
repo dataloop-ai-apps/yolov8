@@ -41,7 +41,7 @@
             "queueLength": 100
           }
         },
-        "executionTimeout": 36000000
+        "executionTimeout": 432000
       }
     ],
     "modules": [
